@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Office Manager - Gestão de Reuniões e Tarefas</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Menu Lateral -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-briefcase"></i> Office Manager</h2>
+                <button class="toggle-btn" id="toggleSidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item active" data-page="dashboard">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        <span class="nav-text">Dashboard</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item" data-page="meetings">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span class="nav-text">Reuniões</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="tasks">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-tasks"></i>
+                        <span class="nav-text">Tarefas</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="fleet">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-car"></i>
+                        <span class="nav-text">Frota</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="containers">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-ship"></i>
+                        <span class="nav-text">Mercadorias</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="backup">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-database"></i>
+                        <span class="nav-text">Backup</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Conteúdo Principal -->
+        <main class="main-content">
+            <!-- Dashboard -->
+            <section id="dashboard" class="page active">
+                <div class="page-header">
+                    <h1>Dashboard</h1>
+                    <p>Visão geral das suas reuniões e tarefas</p>
+                </div>
+                
+                <div class="dashboard-grid">
+                    <div class="dashboard-card alert-card clickable-card" id="meetingsTodayCard">
+                        <div class="card-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Reuniões Hoje</h3>
+                            <span class="card-number" id="meetingsToday">0</span>
+                        </div>
+                        <div class="card-expand-icon">
+                            <i class="fas fa-chevron-down" id="meetingsExpandIcon"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Reunião Ativa</h3>
+                            <span class="card-text" id="activeMeeting">Nenhuma</span>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card alert-card clickable-card" id="pendingTasksCard">
+                        <div class="card-icon">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Tarefas Pendentes</h3>
+                            <span class="card-number" id="pendingTasks">0</span>
+                        </div>
+                        <div class="card-expand-icon">
+                            <i class="fas fa-chevron-down" id="tasksExpandIcon"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Tarefas Concluídas</h3>
+                            <span class="card-number" id="completedTasks">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card alert-card clickable-card" id="containerAlertsCard" title="">
+                        <div class="card-icon">
+                            <i class="fas fa-ship"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Alertas Contentores (5 dias)</h3>
+                            <span class="card-number" id="containerAlerts">0</span>
+                        </div>
+                        <div class="card-expand-icon">
+                            <i class="fas fa-chevron-down" id="alertsExpandIcon"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-car"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Viaturas Disponíveis</h3>
+                            <span class="card-number" id="availableVehicles">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card alert-card clickable-card" id="reservedVehiclesCard">
+                        <div class="card-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Viaturas Reservadas</h3>
+                            <span class="card-number" id="reservedVehicles">0</span>
+                        </div>
+                        <div class="card-expand-icon">
+                            <i class="fas fa-chevron-down" id="reservedVehiclesExpandIcon"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card alert-card" id="maintenanceAlertsCard">
+                        <div class="card-icon">
+                            <i class="fas fa-wrench"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Manutenções Pendentes</h3>
+                            <span class="card-number" id="maintenanceAlerts">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alerts-section" id="maintenanceAlertsSection" style="display: none;">
+                    <div class="alerts-header">
+                        <h2>🔧 Alertas de Manutenção</h2>
+                        <button class="collapse-btn" id="collapseMaintenanceBtn">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                    </div>
+                    <div class="maintenance-alerts collapsible-content" id="maintenanceAlertsList">
+                        <!-- Alertas de manutenção serão carregados dinamicamente -->
+                    </div>
+                </div>
+
+                <div class="alerts-section" id="containerAlertsSection" style="display: none;">
+                    <div class="alerts-header" id="alertsHeader">
+                        <h2>⚠️ Alertas de Contentores</h2>
+                        <button class="collapse-btn" id="collapseAlertsBtn">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                    </div>
+                    <div class="container-alerts collapsible-content" id="containerAlertsList">
+                        <!-- Alertas serão carregados dinamicamente -->
+                    </div>
+                </div>
+
+                <div class="alerts-section" id="meetingsAlertsSection" style="display: none;">
+                    <div class="alerts-header">
+                        <h2>📅 Reuniões de Hoje</h2>
+                        <button class="collapse-btn" id="collapseMeetingsBtn">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                    </div>
+                    <div class="alerts-content collapsible-content" id="meetingsAlertsList">
+                        <!-- Reuniões de hoje serão carregadas dinamicamente -->
+                    </div>
+                </div>
+
+                <div class="alerts-section" id="reservedVehiclesSection" style="display: none;">
+                    <div class="alerts-header">
+                        <h2>🚗 Viaturas Reservadas</h2>
+                        <button class="collapse-btn" id="collapseReservedVehiclesBtn">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                    </div>
+                    <div class="alerts-content collapsible-content" id="reservedVehiclesList">
+                        <!-- Viaturas reservadas serão carregadas dinamicamente -->
+                    </div>
+                </div>
+
+                <div class="alerts-section" id="tasksAlertsSection" style="display: none;">
+                    <div class="alerts-header">
+                        <h2>📋 Tarefas Pendentes</h2>
+                        <button class="collapse-btn" id="collapseTasksBtn">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                    </div>
+                    <div class="alerts-content collapsible-content" id="tasksAlertsList">
+                        <!-- Tarefas pendentes serão carregadas dinamicamente -->
+                    </div>
+                </div>
+
+                <div class="recent-section">
+                    <h2>Próximas Reuniões</h2>
+                    <div class="recent-meetings" id="recentMeetings">
+                        <!-- Reuniões serão carregadas dinamicamente -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Reuniões -->
+            <section id="meetings" class="page">
+                <div class="page-header">
+                    <h1>Reuniões</h1>
+                    <button class="btn btn-primary" id="addMeetingBtn">
+                        <i class="fas fa-plus"></i> Nova Reunião
+                    </button>
+                </div>
+                
+                <div class="meetings-container">
+                    <div class="meetings-list" id="meetingsList">
+                        <!-- Reuniões serão carregadas dinamicamente -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tarefas -->
+            <section id="tasks" class="page">
+                <div class="page-header">
+                    <h1>Tarefas</h1>
+                    <button class="btn btn-primary" id="addTaskBtn">
+                        <i class="fas fa-plus"></i> Nova Tarefa
+                    </button>
+                </div>
+                
+                <div class="tasks-container">
+                    <div class="tasks-filters">
+                        <button class="filter-btn active" data-filter="all">Todas</button>
+                        <button class="filter-btn" data-filter="pending">Pendentes</button>
+                        <button class="filter-btn" data-filter="in_progress">Em Progresso</button>
+                        <button class="filter-btn" data-filter="completed">Concluídas</button>
+                    </div>
+                    
+                    <div class="tasks-list" id="tasksList">
+                        <!-- Tarefas serão carregadas dinamicamente -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Frota -->
+            <section id="fleet" class="page">
+                <div class="page-header">
+                    <h1>Gestão de Frota</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" id="addVehicleBtn">
+                            <i class="fas fa-plus"></i> Nova Viatura
+                        </button>
+                        <button class="btn btn-secondary" id="addReservationBtn">
+                            <i class="fas fa-calendar-plus"></i> Nova Reserva
+                        </button>
+                        <button class="btn btn-info" id="addMaintenanceBtn">
+                            <i class="fas fa-wrench"></i> Agendar Manutenção
+                        </button>
+                    </div>
+                </div>
+
+                <div class="fleet-tabs">
+                    <button class="tab-btn active" data-tab="vehicles">
+                        <i class="fas fa-car"></i> Viaturas
+                    </button>
+                    <button class="tab-btn" data-tab="reservations">
+                        <i class="fas fa-calendar-check"></i> Reservas
+                    </button>
+                    <button class="tab-btn" data-tab="maintenance">
+                        <i class="fas fa-tools"></i> Manutenções
+                    </button>
+                </div>
+
+                <!-- Aba Viaturas -->
+                <div class="tab-content active" id="vehicles-tab">
+                    <div class="vehicles-grid" id="vehiclesGrid">
+                        <!-- Viaturas serão carregadas dinamicamente -->
+                    </div>
+                </div>
+
+                <!-- Aba Reservas -->
+                <div class="tab-content" id="reservations-tab">
+                    <div class="reservations-table-wrapper">
+                        <table class="data-table" id="reservationsTable">
+                            <thead>
+                                <tr>
+                                    <th>Viatura</th>
+                                    <th>Utilizador</th>
+                                    <th>Data Início</th>
+                                    <th>Data Fim</th>
+                                    <th>Propósito</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reservationsTableBody">
+                                <!-- Reservas serão carregadas dinamicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Aba Manutenções -->
+                <div class="tab-content" id="maintenance-tab">
+                    <div class="maintenance-table-wrapper">
+                        <table class="data-table" id="maintenanceTable">
+                            <thead>
+                                <tr>
+                                    <th>Viatura</th>
+                                    <th>Tipo</th>
+                                    <th>Data Agendada</th>
+                                    <th>Prioridade</th>
+                                    <th>Status</th>
+                                    <th>Custo</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="maintenanceTableBody">
+                                <!-- Manutenções serão carregadas dinamicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Mercadorias -->
+            <section id="containers" class="page">
+                <div class="page-header">
+                    <h1>Gestão de Mercadorias</h1>
+                    <button class="btn btn-primary" id="importExcelBtn">
+                        <i class="fas fa-file-excel"></i> Importar Excel
+                    </button>
+                </div>
+                
+                <div class="containers-container">
+                    <div class="containers-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-ship"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>Total Contentores</h3>
+                                <span class="stat-number" id="totalContainers">0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-plane"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>Total Expedições</h3>
+                                <span class="stat-number" id="totalExpeditions">0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>Em Trânsito</h3>
+                                <span class="stat-number" id="transitContainers">0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>Esta Semana</h3>
+                                <span class="stat-number" id="weekContainers">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="containers-table-wrapper">
+                        <table class="containers-table" id="containersTable">
+                            <thead>
+                                <tr>
+                                    <th>País Origem</th>
+                                    <th>Fornecedor</th>
+                                    <th>Tipo</th>
+                                    <th>Cliente</th>
+                                    <th>Ref. Contentor</th>
+                                    <th>Tamanho</th>
+                                    <th>Volumes</th>
+                                    <th>Status</th>
+                                    <th>Saída</th>
+                                    <th>Chegada</th>
+                                </tr>
+                            </thead>
+                            <tbody id="containersTableBody">
+                                <!-- Contentores serão carregados dinamicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Backup -->
+            <section id="backup" class="page">
+                <div class="page-header">
+                    <h1>Sistema de Backup</h1>
+                    <button class="btn btn-primary" id="createBackupBtn">
+                        <i class="fas fa-save"></i> Criar Backup
+                    </button>
+                </div>
+                
+                <div class="backup-container">
+                    <div class="backup-info">
+                        <div class="info-card">
+                            <h3>Backup Automático</h3>
+                            <p>Os backups são criados automaticamente a cada 24 horas</p>
+                            <div class="backup-status">
+                                <span class="status-indicator active"></span>
+                                <span>Sistema Ativo</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="backup-history">
+                        <h3>Histórico de Backups</h3>
+                        <div class="backup-list" id="backupList">
+                            <!-- Backups serão carregados dinamicamente -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal para Nova Reunião -->
+    <div class="modal" id="meetingModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Nova Reunião</h2>
+                <span class="close" id="closeMeetingModal">&times;</span>
+            </div>
+            <form id="meetingForm">
+                <div class="form-group">
+                    <label for="meetingTitle">Título</label>
+                    <input type="text" id="meetingTitle" required>
+                </div>
+                <div class="form-group">
+                    <label for="meetingDescription">Descrição</label>
+                    <textarea id="meetingDescription"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="meetingDate">Data e Hora</label>
+                        <input type="datetime-local" id="meetingDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="meetingDuration">Duração (min)</label>
+                        <input type="number" id="meetingDuration" value="60">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelMeeting">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Criar Reunião</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Nova Tarefa -->
+    <div class="modal" id="taskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Nova Tarefa</h2>
+                <span class="close" id="closeTaskModal">&times;</span>
+            </div>
+            <form id="taskForm">
+                <div class="form-group">
+                    <label for="taskTitle">Título</label>
+                    <input type="text" id="taskTitle" required>
+                </div>
+                <div class="form-group">
+                    <label for="taskDescription">Descrição</label>
+                    <textarea id="taskDescription"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taskPriority">Prioridade</label>
+                        <select id="taskPriority">
+                            <option value="low">Baixa</option>
+                            <option value="medium" selected>Média</option>
+                            <option value="high">Alta</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskDueDate">Data Limite</label>
+                        <input type="datetime-local" id="taskDueDate">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelTask">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Criar Tarefa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Reunião Ativa -->
+    <div class="modal" id="activeMeetingModal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 id="activeMeetingTitle">Reunião - Apontamentos</h2>
+                <span class="close" id="closeActiveMeetingModal">&times;</span>
+            </div>
+            <div class="active-meeting-content">
+                <div class="meeting-notes-section">
+                    <h3>Apontamentos da Reunião</h3>
+                    <div class="notes-container" id="notesContainer">
+                        <!-- Notas serão carregadas dinamicamente -->
+                    </div>
+                    <div class="note-input">
+                        <textarea id="newNote" placeholder="Adicionar novo apontamento..." rows="3"></textarea>
+                        <div class="note-actions">
+                            <button class="btn btn-primary" id="addNoteBtn">
+                                <i class="fas fa-plus"></i> Adicionar Apontamento
+                            </button>
+                            <button class="btn btn-success" id="createTaskFromNoteBtn">
+                                <i class="fas fa-tasks"></i> Criar Tarefa a partir desta Nota
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="meeting-actions-section">
+                    <h3>Ações</h3>
+                    <button class="btn btn-secondary" id="editMeetingBtn">
+                        <i class="fas fa-edit"></i> Editar Reunião
+                    </button>
+                    <button class="btn btn-info" id="createTaskFromMeetingBtn">
+                        <i class="fas fa-plus"></i> Nova Tarefa
+                    </button>
+                    <button class="btn btn-success" id="endMeetingBtn">
+                        <i class="fas fa-stop"></i> Terminar Reunião
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Detalhes do Contentor -->
+    <div class="modal" id="containerModal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Detalhes do Contentor</h2>
+                <span class="close" id="closeContainerModal">&times;</span>
+            </div>
+            <div class="container-details" id="containerDetails">
+                <!-- Detalhes serão carregados dinamicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Viatura -->
+    <div class="modal" id="vehicleModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="vehicleModalTitle">Nova Viatura</h2>
+                <span class="close" id="closeVehicleModal">&times;</span>
+            </div>
+            <form id="vehicleForm">
+                <input type="hidden" id="vehicleId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="vehicleBrand">Marca *</label>
+                        <input type="text" id="vehicleBrand" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="vehicleModel">Modelo *</label>
+                        <input type="text" id="vehicleModel" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="vehicleLicensePlate">Matrícula *</label>
+                        <input type="text" id="vehicleLicensePlate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="vehicleYear">Ano</label>
+                        <input type="number" id="vehicleYear" min="1900" max="2030">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="vehicleType">Tipo *</label>
+                        <select id="vehicleType" required>
+                            <option value="">Selecionar tipo</option>
+                            <option value="ligeiro">Ligeiro</option>
+                            <option value="comercial">Comercial</option>
+                            <option value="pesado">Pesado</option>
+                            <option value="moto">Motociclo</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="vehicleFuelType">Combustível</label>
+                        <select id="vehicleFuelType">
+                            <option value="">Selecionar combustível</option>
+                            <option value="gasolina">Gasolina</option>
+                            <option value="diesel">Diesel</option>
+                            <option value="hibrido">Híbrido</option>
+                            <option value="eletrico">Elétrico</option>
+                            <option value="gas">Gás</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="vehicleMileage">Quilometragem</label>
+                        <input type="number" id="vehicleMileage" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="vehicleStatus">Status</label>
+                        <select id="vehicleStatus">
+                            <option value="available">Disponível</option>
+                            <option value="reserved">Reservada</option>
+                            <option value="maintenance">Manutenção</option>
+                            <option value="inactive">Inativa</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelVehicleBtn">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Reserva -->
+    <div class="modal" id="reservationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="reservationModalTitle">Nova Reserva</h2>
+                <span class="close" id="closeReservationModal">&times;</span>
+            </div>
+            <form id="reservationForm">
+                <input type="hidden" id="reservationId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reservationVehicle">Viatura *</label>
+                        <select id="reservationVehicle" required>
+                            <option value="">Selecionar viatura</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="reservationUser">Utilizador *</label>
+                        <input type="text" id="reservationUser" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reservationStartDate">Data Início *</label>
+                        <input type="datetime-local" id="reservationStartDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reservationEndDate">Data Fim *</label>
+                        <input type="datetime-local" id="reservationEndDate" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="reservationPurpose">Propósito</label>
+                    <textarea id="reservationPurpose" rows="3"></textarea>
+                </div>
+                <div class="form-row" id="mileageSection" style="display: none;">
+                    <div class="form-group">
+                        <label for="reservationMileageStart">Km Inicial</label>
+                        <input type="number" id="reservationMileageStart" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="reservationMileageEnd">Km Final</label>
+                        <input type="number" id="reservationMileageEnd" min="0">
+                    </div>
+                </div>
+                <div class="form-group" id="statusSection" style="display: none;">
+                    <label for="reservationStatus">Status</label>
+                    <select id="reservationStatus">
+                        <option value="active">Ativa</option>
+                        <option value="completed">Concluída</option>
+                        <option value="cancelled">Cancelada</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelReservationBtn">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Manutenção -->
+    <div class="modal" id="maintenanceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="maintenanceModalTitle">Agendar Manutenção</h2>
+                <span class="close" id="closeMaintenanceModal">&times;</span>
+            </div>
+            <form id="maintenanceForm">
+                <input type="hidden" id="maintenanceId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="maintenanceVehicle">Viatura *</label>
+                        <select id="maintenanceVehicle" required>
+                            <option value="">Selecionar viatura</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="maintenanceType">Tipo *</label>
+                        <select id="maintenanceType" required>
+                            <option value="">Selecionar tipo</option>
+                            <option value="revisao">Revisão</option>
+                            <option value="inspecao">Inspeção</option>
+                            <option value="reparacao">Reparação</option>
+                            <option value="pneus">Pneus</option>
+                            <option value="oleo">Mudança de Óleo</option>
+                            <option value="filtros">Filtros</option>
+                            <option value="travoes">Travões</option>
+                            <option value="outro">Outro</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="maintenanceDescription">Descrição</label>
+                    <textarea id="maintenanceDescription" rows="3"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="maintenanceScheduledDate">Data Agendada *</label>
+                        <input type="date" id="maintenanceScheduledDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="maintenancePriority">Prioridade</label>
+                        <select id="maintenancePriority">
+                            <option value="low">Baixa</option>
+                            <option value="medium" selected>Média</option>
+                            <option value="high">Alta</option>
+                            <option value="urgent">Urgente</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="maintenanceCost">Custo (€)</label>
+                        <input type="number" id="maintenanceCost" min="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="maintenanceMileage">Quilometragem</label>
+                        <input type="number" id="maintenanceMileage" min="0">
+                    </div>
+                </div>
+                <div class="form-row" id="maintenanceStatusSection" style="display: none;">
+                    <div class="form-group">
+                        <label for="maintenanceStatus">Status</label>
+                        <select id="maintenanceStatus">
+                            <option value="scheduled">Agendada</option>
+                            <option value="in_progress">Em Progresso</option>
+                            <option value="completed">Concluída</option>
+                            <option value="cancelled">Cancelada</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="maintenanceCompletedDate">Data Conclusão</label>
+                        <input type="date" id="maintenanceCompletedDate">
+                    </div>
+                </div>
+                <div class="form-group" id="nextMaintenanceSection" style="display: none;">
+                    <label for="maintenanceNextDate">Próxima Manutenção</label>
+                    <input type="date" id="maintenanceNextDate">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelMaintenanceBtn">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                          OFFICE MANAGER                         ║
+║                   Sistema de Gestão Completo                    ║
+╚══════════════════════════════════════════════════════════════════╝
+
+🚀 COMO INICIAR A APLICAÇÃO:
+
+📁 MÉTODO MAIS FÁCIL:
+   → Duplo clique em: "ABRIR-OFFICE-MANAGER.bat"
+   → A aplicação abre automaticamente no browser!
+
+⚡ OUTROS MÉTODOS:
+   → "iniciar-office-manager.bat" - Script com verificações
+   → "iniciar-office-manager.ps1" - Script PowerShell avançado
+
+💻 LINHA DE COMANDO:
+   → npm install (primeira vez)
+   → npm start
+
+🌐 ACESSO:
+   → URL: http://localhost:3000
+   → Abre automaticamente no browser
+
+📋 FUNCIONALIDADES:
+
+✅ REUNIÕES:
+   • Agendamento automático
+   • Notas em tempo real
+   • Criação de tarefas durante reuniões
+   • Status automático (Agendada → Ativa → Concluída)
+
+✅ TAREFAS:
+   • Diferentes prioridades
+   • Filtros por status
+   • Prazos e alertas
+   • Ligação com reuniões
+
+✅ BACKUP:
+   • Sistema robusto
+   • Criação manual
+   • Histórico completo
+   • Base de dados estável
+
+✅ INTERFACE:
+   • Design moderno
+   • Menu lateral recolhível
+   • Responsivo (mobile/desktop)
+   • Animações suaves
+
+🔧 SUPORTE TÉCNICO:
+   → Consulte o README.md para detalhes
+   → Base de dados: SQLite (office_manager.db)
+   → Backups em: pasta /backups/
+
+═══════════════════════════════════════════════════════════════════
+              Desenvolvido para facilitar o seu trabalho!
+═══════════════════════════════════════════════════════════════════
