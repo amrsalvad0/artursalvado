@@ -1130,7 +1130,7 @@ textarea {
 
 .stat-content h3 {
     font-size: 0.9rem;
-    color: #495057;
+    color: var(--text-muted);
     margin-bottom: 5px;
     font-weight: 600;
     text-transform: uppercase;
@@ -1140,7 +1140,7 @@ textarea {
 .stat-number {
     font-size: 2rem;
     font-weight: 700;
-    color: #1a202c;
+    color: var(--text-color);
     text-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
@@ -1197,7 +1197,7 @@ textarea {
 .containers-table th {
     background: rgba(99, 102, 241, 0.1);
     font-weight: 600;
-    color: #1a202c;
+    color: var(--text-color);
     text-transform: uppercase;
     font-size: 0.8rem;
     letter-spacing: 0.5px;
@@ -1213,7 +1213,7 @@ textarea {
 }
 
 .containers-table td {
-    color: #1a202c;
+    color: var(--text-color);
 }
 
 .container-status {
@@ -1226,13 +1226,13 @@ textarea {
 }
 
 .container-status.transito {
-    background: #e3f2fd;
-    color: #0d47a1;
+    background: #17a2b8;
+    color: #ffffff;
 }
 
 .container-status.estimativa {
-    background: #fff3e0;
-    color: #e65100;
+    background: #fd7e14;
+    color: #ffffff;
 }
 
 .container-type {
@@ -1243,13 +1243,13 @@ textarea {
 }
 
 .container-type.maritimo {
-    background: #e8f5e8;
-    color: #1b5e20;
+    background: #28a745;
+    color: #ffffff;
 }
 
 .container-type.aereo {
-    background: #f3e5f5;
-    color: #4a148c;
+    background: #6f42c1;
+    color: #ffffff;
 }
 
 /* Alertas de Contentores - Compactos */
@@ -1561,7 +1561,7 @@ textarea {
 .expeditions-table th {
     background: rgba(99, 102, 241, 0.1);
     font-weight: 600;
-    color: #1a202c;
+    color: var(--text-color);
     text-transform: uppercase;
     font-size: 0.75rem;
     letter-spacing: 0.5px;
@@ -1576,7 +1576,7 @@ textarea {
 }
 
 .expeditions-table td {
-    color: #1a202c;
+    color: var(--text-color);
 }
 
 /* Priority badges para expedições */
@@ -1592,20 +1592,20 @@ textarea {
 
 .priority-badge.priority-alta,
 .priority-badge.priority-urgente {
-    background: #f8d7da;
-    color: #5a0f15;
+    background: #dc3545;
+    color: #ffffff;
 }
 
 .priority-badge.priority-média,
 .priority-badge.priority-medium {
-    background: #fff3cd;
-    color: #664d00;
+    background: #ffc107;
+    color: #000000;
 }
 
 .priority-badge.priority-baixa,
 .priority-badge.priority-low {
-    background: #d1ecf1;
-    color: #084451;
+    background: #28a745;
+    color: #ffffff;
 }
 
 /* Status badges para expedições */
@@ -1620,18 +1620,18 @@ textarea {
 }
 
 .status-badge.status-completed {
-    background: #d4edda;
-    color: #0d5c22;
+    background: #28a745;
+    color: #ffffff;
 }
 
 .status-badge.status-in-progress {
-    background: #cce5ff;
-    color: #003d7a;
+    background: #17a2b8;
+    color: #ffffff;
 }
 
 .status-badge.status-pending {
-    background: #ffeaa7;
-    color: #664d00;
+    background: #ffc107;
+    color: #000000;
 }
 
 /* Alertas de expedições */
@@ -1861,14 +1861,14 @@ textarea {
 }
 
 .detail-group {
-    background: #f8f9fa;
+    background: var(--card-bg);
     padding: 20px;
     border-radius: 8px;
-    border: 1px solid #dee2e6;
+    border: 1px solid var(--border-color);
 }
 
 .detail-group h4 {
-    color: #1a202c;
+    color: var(--text-color);
     margin-bottom: 15px;
     font-size: 1.1rem;
     font-weight: 600;
@@ -1884,11 +1884,11 @@ textarea {
 
 .detail-label {
     font-weight: 500;
-    color: #495057;
+    color: var(--text-muted);
 }
 
 .detail-value {
-    color: #1a202c;
+    color: var(--text-color);
     font-weight: 600;
 }
 
