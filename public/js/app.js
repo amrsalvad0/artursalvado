@@ -774,6 +774,9 @@ function updateDashboard() {
     if (typeof loadReservedVehiclesAlerts === 'function') {
         loadReservedVehiclesAlerts();
     }
+    
+    // Atualizar banner do dashboard
+    updateDashboardBanner();
 }
 
 // Função para carregar reuniões de hoje na seção de alertas
@@ -4143,6 +4146,114 @@ function searchDashboardPhones(searchTerm) {
     }
     
     resultsDropdown.classList.add('show');
+}
+
+// ================================
+// BANNER DO DASHBOARD
+// ================================
+
+function updateDashboardBanner() {
+    const bannerElement = document.getElementById('dashboardBanner');
+    if (!bannerElement) return;
+    
+    const bannerItems = [];
+    
+    // Reuniões hoje
+    const today = new Date().toDateString();
+    const meetingsToday = meetings.filter(m => new Date(m.date_time).toDateString() === today);
+    if (meetingsToday.length > 0) {
+        const activeCount = meetingsToday.filter(m => m.status === 'active').length;
+        if (activeCount > 0) {
+            bannerItems.push(`<span class="banner-item success">📅 ${activeCount} reunião${activeCount > 1 ? 'ões' : ''} ativa${activeCount > 1 ? 's' : ''}</span>`);
+        } else {
+            bannerItems.push(`<span class="banner-item">📅 ${meetingsToday.length} reunião${meetingsToday.length > 1 ? 'ões' : ''} hoje</span>`);
+        }
+    } else {
+        bannerItems.push(`<span class="banner-item">📅 Sem reuniões agendadas hoje</span>`);
+    }
+    
+    // Tarefas pendentes
+    const pendingTasks = tasks.filter(t => t.status === 'pending');
+    if (pendingTasks.length > 0) {
+        const overdueTasks = pendingTasks.filter(t => t.due_date && new Date(t.due_date) < new Date());
+        if (overdueTasks.length > 0) {
+            bannerItems.push(`<span class="banner-item alert">⚠️ ${overdueTasks.length} tarefa${overdueTasks.length > 1 ? 's' : ''} atrasada${overdueTasks.length > 1 ? 's' : ''}</span>`);
+        } else {
+            bannerItems.push(`<span class="banner-item">📋 ${pendingTasks.length} tarefa${pendingTasks.length > 1 ? 's' : ''} pendente${pendingTasks.length > 1 ? 's' : ''}</span>`);
+        }
+    } else {
+        bannerItems.push(`<span class="banner-item success">✅ Todas as tarefas concluídas</span>`);
+    }
+    
+    // Alertas de contentores marítimos
+    if (containers && containers.length > 0) {
+        const maritimeContainers = containers.filter(c => isMaritime(c));
+        const maritimeAlerts = maritimeContainers.filter(c => {
+            if (!c.arrival_date) return false;
+            const arrivalDate = new Date(c.arrival_date);
+            const daysUntil = Math.ceil((arrivalDate - new Date()) / (1000 * 60 * 60 * 24));
+            return daysUntil >= 0 && daysUntil <= 7;
+        });
+        
+        if (maritimeAlerts.length > 0) {
+            const urgentAlerts = maritimeAlerts.filter(c => {
+                const arrivalDate = new Date(c.arrival_date);
+                const daysUntil = Math.ceil((arrivalDate - new Date()) / (1000 * 60 * 60 * 24));
+                return daysUntil <= 2;
+            });
+            
+            if (urgentAlerts.length > 0) {
+                bannerItems.push(`<span class="banner-item alert">🚢 ${urgentAlerts.length} contentor${urgentAlerts.length > 1 ? 'es' : ''} urgente${urgentAlerts.length > 1 ? 's' : ''} (≤2 dias)</span>`);
+            } else {
+                bannerItems.push(`<span class="banner-item warning">🚢 ${maritimeAlerts.length} contentor${maritimeAlerts.length > 1 ? 'es' : ''} chegando (≤7 dias)</span>`);
+            }
+        } else {
+            bannerItems.push(`<span class="banner-item">🚢 ${maritimeContainers.length} contentor${maritimeContainers.length > 1 ? 'es' : ''} marítimo${maritimeContainers.length > 1 ? 's' : ''}</span>`);
+        }
+    }
+    
+    // Expedições
+    if (expeditions && expeditions.length > 0) {
+        const upcomingExpeditions = expeditions.filter(e => {
+            if (!e.date || e.status === 'completed') return false;
+            const expeditionDate = new Date(e.date);
+            const daysUntil = Math.ceil((expeditionDate - new Date()) / (1000 * 60 * 60 * 24));
+            return daysUntil >= 0 && daysUntil <= 5;
+        });
+        
+        if (upcomingExpeditions.length > 0) {
+            const urgentExpeditions = upcomingExpeditions.filter(e => {
+                const priority = (e.priority || '').toLowerCase();
+                return priority === 'alta' || priority === 'urgente';
+            });
+            
+            if (urgentExpeditions.length > 0) {
+                bannerItems.push(`<span class="banner-item alert">🚚 ${urgentExpeditions.length} expedição${urgentExpeditions.length > 1 ? 'ões' : ''} urgente${urgentExpeditions.length > 1 ? 's' : ''}</span>`);
+            } else {
+                bannerItems.push(`<span class="banner-item warning">🚚 ${upcomingExpeditions.length} expedição${upcomingExpeditions.length > 1 ? 'ões' : ''} próxima${upcomingExpeditions.length > 1 ? 's' : ''}</span>`);
+            }
+        } else {
+            bannerItems.push(`<span class="banner-item">🚚 ${expeditions.length} expedição${expeditions.length > 1 ? 'ões' : ''} registrada${expeditions.length > 1 ? 's' : ''}</span>`);
+        }
+    }
+    
+    // Viaturas
+    if (vehicles && vehicles.length > 0) {
+        const availableVehicles = vehicles.filter(v => v.status === 'available');
+        const maintenanceVehicles = vehicles.filter(v => v.status === 'maintenance');
+        
+        if (maintenanceVehicles.length > 0) {
+            bannerItems.push(`<span class="banner-item warning">🔧 ${maintenanceVehicles.length} viatura${maintenanceVehicles.length > 1 ? 's' : ''} em manutenção</span>`);
+        } else if (availableVehicles.length > 0) {
+            bannerItems.push(`<span class="banner-item success">🚗 ${availableVehicles.length} viatura${availableVehicles.length > 1 ? 's' : ''} disponível${availableVehicles.length > 1 ? 'eis' : ''}</span>`);
+        } else {
+            bannerItems.push(`<span class="banner-item">🚗 ${vehicles.length} viatura${vehicles.length > 1 ? 's' : ''} na frota</span>`);
+        }
+    }
+    
+    // Duplicar items para criar efeito de scroll infinito
+    const duplicatedItems = [...bannerItems, ...bannerItems];
+    bannerElement.innerHTML = duplicatedItems.join('');
 }
 
 
