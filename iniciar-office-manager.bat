@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo      OFFICE MANAGER - INICIANDO...
+echo      ARTUR SALVADO - INICIANDO...
 echo ========================================
 echo.
 
@@ -48,7 +48,7 @@ start http://localhost:3000
 rem Manter o terminal aberto
 echo.
 echo ========================================
-echo   OFFICE MANAGER ESTÁ A CORRER!
+echo   ARTUR SALVADO ESTÁ A CORRER!
 echo   Browser: http://localhost:3000
 echo   Para parar: Pressione Ctrl+C
 echo ========================================

@@ -6,6 +6,7 @@ let meetings = [];
 let tasks = [];
 let backups = [];
 let containers = [];
+let expeditions = [];
 let vehicles = [];
 let reservations = [];
 let maintenance = [];
@@ -45,7 +46,16 @@ const maintenanceModal = document.getElementById('maintenanceModal');
 const addMeetingBtn = document.getElementById('addMeetingBtn');
 const addTaskBtn = document.getElementById('addTaskBtn');
 const createBackupBtn = document.getElementById('createBackupBtn');
+const cleanOldBackupsBtn = document.getElementById('cleanOldBackupsBtn');
 const importExcelBtn = document.getElementById('importExcelBtn');
+
+// Elementos de Relatórios
+const reportVehicleSelect = document.getElementById('reportVehicleSelect');
+const reportDateFrom = document.getElementById('reportDateFrom');
+const reportDateTo = document.getElementById('reportDateTo');
+const generateReportBtn = document.getElementById('generateReportBtn');
+const exportPdfBtn = document.getElementById('exportPdfBtn');
+const reportContent = document.getElementById('reportContent');
 
 // Formulários
 const meetingForm = document.getElementById('meetingForm');
@@ -68,8 +78,14 @@ function initializeApp() {
     // Verificar reuniões ativas
     checkActiveMeetings();
     
+    // Verificar reservas expiradas
+    checkExpiredReservations();
+    
     // Configurar timer para verificar reuniões
     setInterval(checkActiveMeetings, 60000); // Verificar a cada minuto
+    
+    // Configurar timer para verificar reservas expiradas
+    setInterval(checkExpiredReservations, 60000); // Verificar a cada minuto
     
     // Inicializar estado das seções expandíveis
     initializeExpandableSections();
@@ -108,6 +124,7 @@ function setupEventListeners() {
     addMeetingBtn.addEventListener('click', () => openMeetingModal());
     addTaskBtn.addEventListener('click', () => openTaskModal());
     createBackupBtn.addEventListener('click', createBackup);
+    cleanOldBackupsBtn.addEventListener('click', cleanOldBackups);
 
     // Card de alertas clicável
     const containerAlertsCard = document.getElementById('containerAlertsCard');
@@ -139,6 +156,15 @@ function setupEventListeners() {
         collapseAlertsBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             toggleAlertsCollapse();
+        });
+    }
+
+    // Botão de colapso dos alertas de expedições
+    const collapseExpeditionsBtn = document.getElementById('collapseExpeditionsBtn');
+    if (collapseExpeditionsBtn) {
+        collapseExpeditionsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleExpeditionsCollapse();
         });
     }
 
@@ -240,6 +266,24 @@ function setupEventListeners() {
             }
         });
     }
+
+    // Event listeners para relatórios
+    if (generateReportBtn) {
+        generateReportBtn.addEventListener('click', generateVehicleReport);
+    }
+
+    if (exportPdfBtn) {
+        exportPdfBtn.addEventListener('click', exportReportToPdf);
+    }
+
+    if (reportVehicleSelect) {
+        reportVehicleSelect.addEventListener('change', function() {
+            exportPdfBtn.disabled = !this.value;
+            if (!this.value) {
+                reportContent.style.display = 'none';
+            }
+        });
+    }
 }
 
 function setupNavigation() {
@@ -270,6 +314,12 @@ function showPage(pageId) {
             break;
         case 'tasks':
             loadTasks();
+            break;
+        case 'containers':
+            loadContainers();
+            break;
+        case 'expeditions':
+            loadExpeditions();
             break;
         case 'backup':
             loadBackups();
@@ -303,6 +353,61 @@ function setupModals() {
     document.getElementById('cancelTask')?.addEventListener('click', () => {
         closeModal(taskModal);
     });
+    
+    // Event listener para checkbox de recorrência
+    const isRecurringCheckbox = document.getElementById('isRecurring');
+    const recurrenceOptions = document.getElementById('recurrenceOptions');
+    
+    if (isRecurringCheckbox && recurrenceOptions) {
+        isRecurringCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                recurrenceOptions.style.display = 'block';
+                recurrenceOptions.classList.add('fade-in');
+                recurrenceOptions.classList.remove('fade-out');
+                
+                // Definir data mínima para fim de recorrência
+                const meetingDate = document.getElementById('meetingDate');
+                const recurrenceEndDate = document.getElementById('recurrenceEndDate');
+                
+                if (meetingDate.value && recurrenceEndDate) {
+                    const startDate = new Date(meetingDate.value);
+                    startDate.setDate(startDate.getDate() + 1); // Mínimo um dia depois
+                    recurrenceEndDate.min = startDate.toISOString().split('T')[0];
+                    
+                    // Sugerir data padrão (3 meses depois)
+                    if (!recurrenceEndDate.value) {
+                        const suggestedEnd = new Date(meetingDate.value);
+                        suggestedEnd.setMonth(suggestedEnd.getMonth() + 3);
+                        recurrenceEndDate.value = suggestedEnd.toISOString().split('T')[0];
+                    }
+                }
+            } else {
+                recurrenceOptions.classList.add('fade-out');
+                recurrenceOptions.classList.remove('fade-in');
+                setTimeout(() => {
+                    recurrenceOptions.style.display = 'none';
+                }, 300);
+            }
+        });
+    }
+    
+    // Event listener para mudança na data da reunião
+    const meetingDate = document.getElementById('meetingDate');
+    if (meetingDate) {
+        meetingDate.addEventListener('change', function() {
+            const isRecurringCheckbox = document.getElementById('isRecurring');
+            const recurrenceEndDate = document.getElementById('recurrenceEndDate');
+            
+            if (isRecurringCheckbox?.checked && this.value && recurrenceEndDate) {
+                const startDate = new Date(this.value);
+                startDate.setDate(startDate.getDate() + 1);
+                recurrenceEndDate.min = startDate.toISOString().split('T')[0];
+            }
+        });
+    }
+    
+    // Setup telefones event listeners
+    setupPhonesEventListeners();
 }
 
 function openModal(modal) {
@@ -333,6 +438,13 @@ function openMeetingModal() {
     const submitButton = document.querySelector('#meetingModal button[type="submit"]');
     modalTitle.textContent = 'Nova Reunião';
     submitButton.textContent = 'Criar Reunião';
+    
+    // Reset opções de recorrência
+    document.getElementById('isRecurring').checked = false;
+    document.getElementById('recurrenceOptions').style.display = 'none';
+    document.getElementById('recurrenceType').value = 'weekly';
+    document.getElementById('recurrenceInterval').value = 1;
+    document.getElementById('recurrenceEndDate').value = '';
     
     // Definir data/hora padrão para agora
     const now = new Date();
@@ -375,7 +487,9 @@ async function loadData() {
             loadMeetings(),
             loadTasks(),
             loadBackups(),
-            loadContainers()
+            loadContainers(),
+            loadExpeditions(),
+            loadPhones()
         ]);
         updateDashboard();
     } catch (error) {
@@ -469,10 +583,17 @@ function createMeetingElement(meeting, isCompact = false) {
     const formattedDate = date.toLocaleDateString('pt-PT');
     const formattedTime = date.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
     
+    // Indicador de recorrência
+    const recurrenceIndicator = (meeting.is_recurring || meeting.parent_meeting_id) ? 
+        '<span class="meeting-recurrence-indicator"><i class="fas fa-redo"></i> Recorrente</span>' : '';
+    
     div.innerHTML = `
         <div class="meeting-header">
             <div class="meeting-content" onclick="openMeetingDetails('${meeting.id}')">
-                <div class="meeting-title">${meeting.title}</div>
+                <div class="meeting-title">
+                    ${meeting.title}
+                    ${recurrenceIndicator}
+                </div>
                 <div class="meeting-time">${formattedDate} às ${formattedTime}</div>
                 ${!isCompact && meeting.description ? `<div style="color: #7f8c8d; margin-top: 5px;">${meeting.description}</div>` : ''}
             </div>
@@ -480,10 +601,15 @@ function createMeetingElement(meeting, isCompact = false) {
                 <span class="meeting-status status-${meeting.status}">${getStatusText(meeting.status)}</span>
                 ${!isCompact ? `
                     <div class="meeting-buttons">
+                        ${meeting.status !== 'completed' ? `
+                            <button class="btn-icon btn-success" onclick="event.stopPropagation(); markMeetingAsCompleted('${meeting.id}')" title="Marcar como concluída">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        ` : ''}
                         <button class="btn-icon btn-primary" onclick="event.stopPropagation(); editMeeting('${meeting.id}')" title="Editar reunião">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn-icon btn-danger" onclick="event.stopPropagation(); deleteMeeting('${meeting.id}')" title="Eliminar reunião">
+                        <button class="btn-icon btn-danger" onclick="event.stopPropagation(); deleteMeeting('${meeting.id}', ${meeting.is_recurring || meeting.parent_meeting_id})" title="Eliminar reunião">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -627,6 +753,11 @@ function updateDashboard() {
     // Verificar alertas de contentores se a função existir
     if (typeof checkContainerAlerts === 'function') {
         checkContainerAlerts();
+    }
+    
+    // Verificar alertas de expedições se a função existir
+    if (typeof checkExpeditionAlerts === 'function') {
+        checkExpeditionAlerts();
     }
     
     // Atualizar estatísticas da frota
@@ -794,6 +925,25 @@ async function endMeeting(meeting) {
     }
 }
 
+function checkExpiredReservations() {
+    if (!reservations || reservations.length === 0) return;
+    
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // Fim do dia atual para comparação
+    
+    reservations.forEach(reservation => {
+        if (reservation.status === 'active') {
+            const endDate = new Date(reservation.end_date);
+            
+            // Se a data de fim já passou, auto-concluir a reserva
+            if (endDate < today) {
+                console.log(`Auto-concluindo reserva expirada: ${reservation.id} (fim: ${reservation.end_date})`);
+                autoCompleteReservation(reservation.id);
+            }
+        }
+    });
+}
+
 async function endCurrentMeeting() {
     if (!currentMeeting) return;
     
@@ -831,25 +981,59 @@ function editMeeting(meetingId) {
     openModal(meetingModal);
 }
 
-async function deleteMeeting(meetingId) {
+async function deleteMeeting(meetingId, isRecurring = false) {
     const meeting = meetings.find(m => m.id === meetingId);
     if (!meeting) {
         showNotification('Reunião não encontrada', 'error');
         return;
     }
     
-    if (!confirm(`Tem a certeza que deseja eliminar a reunião "${meeting.title}"?`)) {
-        return;
+    let confirmMessage = `Tem a certeza que deseja eliminar a reunião "${meeting.title}"?`;
+    let deleteAll = false;
+    
+    if (isRecurring) {
+        const choice = confirm(
+            `Esta reunião faz parte de uma série recorrente.\n\n` +
+            `Clique "OK" para eliminar TODA a série de reuniões.\n` +
+            `Clique "Cancelar" para eliminar apenas esta reunião.`
+        );
+        
+        if (choice === null) return; // User cancelled completely
+        
+        deleteAll = choice;
+        
+        if (deleteAll) {
+            confirmMessage = `Tem a certeza que deseja eliminar TODA a série de reuniões "${meeting.title}"?`;
+        } else {
+            confirmMessage = `Tem a certeza que deseja eliminar apenas esta reunião "${meeting.title}"?`;
+        }
+        
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+    } else {
+        if (!confirm(confirmMessage)) {
+            return;
+        }
     }
     
     try {
-        const response = await fetch(`/api/meetings/${meetingId}`, {
+        const url = deleteAll ? `/api/meetings/${meetingId}?deleteAll=true` : `/api/meetings/${meetingId}`;
+        const response = await fetch(url, {
             method: 'DELETE'
         });
         
         if (response.ok) {
-            showNotification('Reunião eliminada com sucesso!', 'success');
+            const result = await response.json();
+            
+            if (deleteAll && result.deleted_count > 1) {
+                showNotification(`${result.deleted_count} reuniões eliminadas com sucesso!`, 'success');
+            } else {
+                showNotification('Reunião eliminada com sucesso!', 'success');
+            }
+            
             await loadMeetings();
+            updateDashboard();
         } else {
             throw new Error('Erro ao eliminar reunião');
         }
@@ -973,6 +1157,39 @@ async function updateMeetingStatus(meetingId, status) {
     }
 }
 
+async function markMeetingAsCompleted(meetingId) {
+    try {
+        // Encontrar a reunião na lista local
+        const meeting = meetings.find(m => m.id === meetingId);
+        if (!meeting) {
+            console.error('Reunião não encontrada');
+            return;
+        }
+        
+        // Confirmar a ação
+        if (!confirm(`Tem a certeza que deseja marcar a reunião "${meeting.title}" como concluída?`)) {
+            return;
+        }
+        
+        // Atualizar o status no servidor
+        await updateMeetingStatus(meetingId, 'completed');
+        
+        // Atualizar o status local
+        meeting.status = 'completed';
+        
+        // Re-renderizar as reuniões
+        renderMeetings();
+        loadTodayMeetings();
+        
+        // Mostrar notificação de sucesso
+        showNotification('Reunião marcada como concluída com sucesso!', 'success');
+        
+    } catch (error) {
+        console.error('Erro ao marcar reunião como concluída:', error);
+        showNotification('Erro ao marcar reunião como concluída', 'error');
+    }
+}
+
 function createTaskFromCurrentNote() {
     const noteText = document.getElementById('newNote').value.trim();
     
@@ -1038,13 +1255,35 @@ function editTask(taskId) {
 async function handleMeetingSubmit(e) {
     e.preventDefault();
     
-    const formData = new FormData(meetingForm);
     const meetingData = {
         title: document.getElementById('meetingTitle').value,
         description: document.getElementById('meetingDescription').value,
         date_time: document.getElementById('meetingDate').value,
         duration: parseInt(document.getElementById('meetingDuration').value)
     };
+    
+    // Verificar se é reunião recorrente
+    const isRecurring = document.getElementById('isRecurring').checked;
+    if (isRecurring) {
+        meetingData.is_recurring = true;
+        meetingData.recurrence_type = document.getElementById('recurrenceType').value;
+        meetingData.recurrence_interval = parseInt(document.getElementById('recurrenceInterval').value);
+        meetingData.recurrence_end_date = document.getElementById('recurrenceEndDate').value;
+        
+        // Validar data de fim
+        if (!meetingData.recurrence_end_date) {
+            showNotification('Por favor, defina a data de fim da recorrência', 'error');
+            return;
+        }
+        
+        const startDate = new Date(meetingData.date_time);
+        const endDate = new Date(meetingData.recurrence_end_date);
+        
+        if (endDate <= startDate) {
+            showNotification('A data de fim deve ser posterior à data da reunião', 'error');
+            return;
+        }
+    }
     
     try {
         const editId = meetingForm.dataset.editId;
@@ -1065,12 +1304,23 @@ async function handleMeetingSubmit(e) {
         });
         
         if (response.ok) {
-            showNotification(editId ? 'Reunião atualizada!' : 'Reunião criada!', 'success');
+            const result = await response.json();
+            
+            if (isRecurring && !editId) {
+                showNotification(`Criadas ${result.meetings_count} reuniões recorrentes!`, 'success');
+            } else {
+                showNotification(editId ? 'Reunião atualizada!' : 'Reunião criada!', 'success');
+            }
+            
             closeModal(meetingModal);
             await loadMeetings();
             updateDashboard();
             meetingForm.reset();
             delete meetingForm.dataset.editId;
+            
+            // Reset recurrence options
+            document.getElementById('isRecurring').checked = false;
+            document.getElementById('recurrenceOptions').style.display = 'none';
         }
         
     } catch (error) {
@@ -1248,6 +1498,48 @@ async function createBackup() {
     }
 }
 
+async function cleanOldBackups() {
+    const confirmMessage = 'Tem a certeza que deseja apagar todos os backups com mais de 15 dias?\n\nEsta ação não pode ser desfeita e irá libertar espaço em disco.';
+    
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+    
+    try {
+        cleanOldBackupsBtn.disabled = true;
+        cleanOldBackupsBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Limpando...';
+        
+        const response = await fetch('/api/backups/cleanup', {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            
+            if (result.deletedCount > 0) {
+                showNotification(
+                    `${result.deletedCount} backup(s) removido(s) com sucesso! Espaço libertado: ${result.spaceSaved} MB`, 
+                    'success'
+                );
+            } else {
+                showNotification(result.message, 'info');
+            }
+            
+            await loadBackups();
+        } else {
+            const error = await response.json();
+            showNotification(`Erro ao limpar backups: ${error.error}`, 'error');
+        }
+        
+    } catch (error) {
+        console.error('Erro ao limpar backups antigos:', error);
+        showNotification('Erro ao limpar backups antigos', 'error');
+    } finally {
+        cleanOldBackupsBtn.disabled = false;
+        cleanOldBackupsBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Limpar Backups Antigos (15+ dias)';
+    }
+}
+
 async function restoreBackup(backupId, filename) {
     const confirmMessage = `Tem a certeza que deseja restaurar o backup "${filename}"?\n\nAVISO: Esta ação irá substituir todos os dados atuais. Um backup de segurança será criado automaticamente antes da restauração.`;
     
@@ -1414,6 +1706,17 @@ function renderContainers() {
         const statusClass = normalizeText(statusText).includes('transito') || normalizeText(statusText).includes('trânsito') ? 'transito' : 'estimativa';
         const cargoTypeClass = maritime ? 'maritimo' : 'aereo';
         
+        // Status de receção
+        const isReceived = container.received === 1 || container.received === true;
+        const receptionStatus = isReceived ? 
+            '<span class="status-badge status-received">✓ Recebido</span>' : 
+            '<span class="status-badge status-pending">⏳ Pendente</span>';
+        
+        // Adicionar classe à linha se estiver recebido
+        if (isReceived) {
+            row.classList.add('container-received');
+        }
+        
         row.innerHTML = `
             <td>${container.country_origin || '-'}</td>
             <td>${container.supplier || '-'}</td>
@@ -1423,6 +1726,7 @@ function renderContainers() {
             <td>${container.container_size || '-'}</td>
             <td>${container.volumes || 0}</td>
             <td><span class="container-status ${statusClass}">${container.transit_status || '-'}</span></td>
+            <td>${receptionStatus}</td>
             <td>${formatDate(container.departure_date)}</td>
             <td>${formatDate(container.arrival_date)}</td>
         `;
@@ -1433,7 +1737,7 @@ function renderContainers() {
 
 function updateContainerStats() {
     const totalContainers = document.getElementById('totalContainers');
-    const totalExpeditions = document.getElementById('totalExpeditions');
+    const totalExpeditions = document.getElementById('totalAirExpeditions');
     const transitContainers = document.getElementById('transitContainers');
     const weekContainers = document.getElementById('weekContainers');
     
@@ -1521,33 +1825,90 @@ async function checkContainerAlerts() {
             }
             alertsList.innerHTML = '';
             
+            // Agrupar contentores pela referência
+            const groupedAlerts = {};
             alerts.forEach(container => {
+                const ref = container.container_ref || 'N/A';
+                if (!groupedAlerts[ref]) {
+                    groupedAlerts[ref] = [];
+                }
+                groupedAlerts[ref].push(container);
+            });
+            
+            // Renderizar alertas agrupados
+            Object.entries(groupedAlerts).forEach(([ref, containersGroup]) => {
                 const alertDiv = document.createElement('div');
                 alertDiv.className = 'container-alert';
-                alertDiv.onclick = () => showContainerDetails(container);
                 
-                const arrivalDate = new Date(container.arrival_date);
-                const today = new Date();
-                const daysUntil = Math.ceil((arrivalDate - today) / (1000 * 60 * 60 * 24));
-                
-                // Definir classe de prioridade baseada nos dias
-                let priorityClass = '';
-                if (daysUntil <= 2) {
-                    priorityClass = 'alert-urgent'; // Vermelho para 2 dias ou menos
-                } else if (daysUntil <= 5) {
-                    priorityClass = 'alert-warning'; // Laranja para 3-5 dias
+                // Se houver múltiplos contentores com a mesma referência
+                if (containersGroup.length > 1) {
+                    // Encontrar a data de chegada mais próxima
+                    const earliestContainer = containersGroup.reduce((earliest, current) => {
+                        const currentDate = new Date(current.arrival_date);
+                        const earliestDate = new Date(earliest.arrival_date);
+                        return currentDate < earliestDate ? current : earliest;
+                    });
+                    
+                    const arrivalDate = new Date(earliestContainer.arrival_date);
+                    const today = new Date();
+                    const daysUntil = Math.ceil((arrivalDate - today) / (1000 * 60 * 60 * 24));
+                    
+                    // Definir classe de prioridade baseada nos dias
+                    let priorityClass = '';
+                    if (daysUntil <= 2) {
+                        priorityClass = 'alert-urgent';
+                    } else if (daysUntil <= 5) {
+                        priorityClass = 'alert-warning';
+                    } else {
+                        priorityClass = 'alert-normal';
+                    }
+                    
+                    alertDiv.classList.add(priorityClass);
+                    
+                    // Listar todos os fornecedores e clientes
+                    const suppliers = [...new Set(containersGroup.map(c => c.supplier))].join(', ');
+                    const clients = [...new Set(containersGroup.map(c => c.client))].join(', ');
+                    const uniqueClientsCount = new Set(containersGroup.map(c => c.client)).size;
+                    const contents = [...new Set(containersGroup.map(c => c.content).filter(Boolean))];
+                    
+                    alertDiv.innerHTML = `
+                        <h4>${suppliers} → ${clients}</h4>
+                        <p><strong>Referência:</strong> ${ref} <span style="color: #fbbf24; font-weight: 600;">(${uniqueClientsCount} cliente${uniqueClientsCount > 1 ? 's' : ''})</span></p>
+                        ${contents.length > 0 ? `<p><strong>Conteúdo:</strong> ${contents.join(', ')}</p>` : ''}
+                        <p class="alert-date">Chegada mais próxima: ${formatDate(earliestContainer.arrival_date)} (${daysUntil} dias)</p>
+                    `;
+                    
+                    // Ao clicar, mostrar detalhes do primeiro contentor ou lista
+                    alertDiv.onclick = () => showContainerDetails(earliestContainer);
+                    
                 } else {
-                    priorityClass = 'alert-normal'; // Amarelo para mais de 5 dias
+                    // Contentor único
+                    const container = containersGroup[0];
+                    const arrivalDate = new Date(container.arrival_date);
+                    const today = new Date();
+                    const daysUntil = Math.ceil((arrivalDate - today) / (1000 * 60 * 60 * 24));
+                    
+                    // Definir classe de prioridade baseada nos dias
+                    let priorityClass = '';
+                    if (daysUntil <= 2) {
+                        priorityClass = 'alert-urgent';
+                    } else if (daysUntil <= 5) {
+                        priorityClass = 'alert-warning';
+                    } else {
+                        priorityClass = 'alert-normal';
+                    }
+                    
+                    alertDiv.classList.add(priorityClass);
+                    
+                    alertDiv.innerHTML = `
+                        <h4>${container.supplier} → ${container.client}</h4>
+                        <p><strong>Referência:</strong> ${container.container_ref || 'N/A'}</p>
+                        <p><strong>Conteúdo:</strong> ${container.content || 'N/A'}</p>
+                        <p class="alert-date">Chegada: ${formatDate(container.arrival_date)} (${daysUntil} dias)</p>
+                    `;
+                    
+                    alertDiv.onclick = () => showContainerDetails(container);
                 }
-                
-                alertDiv.classList.add(priorityClass);
-                
-                alertDiv.innerHTML = `
-                    <h4>${container.supplier} → ${container.client}</h4>
-                    <p><strong>Referência:</strong> ${container.container_ref || 'N/A'}</p>
-                    <p><strong>Conteúdo:</strong> ${container.content || 'N/A'}</p>
-                    <p class="alert-date">Chegada: ${formatDate(container.arrival_date)} (${daysUntil} dias)</p>
-                `;
                 
                 alertsList.appendChild(alertDiv);
             });
@@ -1833,6 +2194,29 @@ function showContainerDetails(container) {
     const detailsDiv = document.getElementById('containerDetails');
     
     if (!modal || !detailsDiv) return;
+
+    const isReceived = container.received === 1 || container.received === true;
+    const receivedDate = container.received_date;
+    
+    // Buscar todos os contentores com a mesma referência
+    const sameRefContainers = containers.filter(c => 
+        c.container_ref === container.container_ref && container.container_ref
+    );
+    
+    // Obter todos os clientes únicos
+    const allClients = [...new Set(sameRefContainers.map(c => c.client).filter(Boolean))];
+    const clientsList = allClients.length > 0 ? allClients.join(', ') : 'N/A';
+    
+    // Obter todas as encomendas internas únicas
+    const allOrders = [...new Set(sameRefContainers.map(c => c.internal_order).filter(Boolean))];
+    const ordersList = allOrders.length > 0 ? allOrders.join(', ') : 'N/A';
+    
+    // Calcular total de volumes
+    const totalVolumes = sameRefContainers.reduce((sum, c) => sum + (parseInt(c.volumes) || 0), 0);
+    
+    // Obter todo o conteúdo único
+    const allContent = [...new Set(sameRefContainers.map(c => c.content).filter(Boolean))];
+    const contentList = allContent.length > 0 ? allContent.join(', ') : 'N/A';
     
     detailsDiv.innerHTML = `
         <div class="detail-group">
@@ -1846,13 +2230,19 @@ function showContainerDetails(container) {
                 <span class="detail-value">${container.supplier || 'N/A'}</span>
             </div>
             <div class="detail-item">
-                <span class="detail-label">Cliente:</span>
-                <span class="detail-value">${container.client || 'N/A'}</span>
+                <span class="detail-label">Cliente${allClients.length > 1 ? 's' : ''}:</span>
+                <span class="detail-value">${clientsList}</span>
             </div>
             <div class="detail-item">
-                <span class="detail-label">Encomenda Interna:</span>
-                <span class="detail-value">${container.internal_order || 'N/A'}</span>
+                <span class="detail-label">Encomenda${allOrders.length > 1 ? 's' : ''} Interna${allOrders.length > 1 ? 's' : ''}:</span>
+                <span class="detail-value">${ordersList}</span>
             </div>
+            ${sameRefContainers.length > 1 ? `
+            <div class="detail-item">
+                <span class="detail-label">Contentores Agrupados:</span>
+                <span class="detail-value" style="color: #fbbf24; font-weight: 600;">${sameRefContainers.length}</span>
+            </div>
+            ` : ''}
         </div>
         
         <div class="detail-group">
@@ -1870,12 +2260,12 @@ function showContainerDetails(container) {
                 <span class="detail-value">${container.container_size || 'N/A'}</span>
             </div>
             <div class="detail-item">
-                <span class="detail-label">Volumes:</span>
-                <span class="detail-value">${container.volumes || 0}</span>
+                <span class="detail-label">Total de Volumes:</span>
+                <span class="detail-value" style="font-weight: 600;">${totalVolumes}</span>
             </div>
             <div class="detail-item">
-                <span class="detail-label">Conteúdo:</span>
-                <span class="detail-value">${container.content || 'N/A'}</span>
+                <span class="detail-label">Conteúdo Completo:</span>
+                <span class="detail-value">${contentList}</span>
             </div>
         </div>
         
@@ -1898,23 +2288,134 @@ function showContainerDetails(container) {
                 <span class="detail-value">${container.arrival_week || 'N/A'}</span>
             </div>
         </div>
+        
+        <div class="detail-group">
+            <h4>Status de Receção</h4>
+            <div class="detail-item">
+                <span class="detail-label">Status:</span>
+                <span class="detail-value">
+                    <span class="status-badge ${isReceived ? 'status-received' : 'status-pending'}">
+                        ${isReceived ? '✓ Recebido' : '⏳ Pendente'}
+                    </span>
+                </span>
+            </div>
+            ${isReceived && receivedDate ? `
+            <div class="detail-item">
+                <span class="detail-label">Data de Receção:</span>
+                <span class="detail-value">${formatDateTime(receivedDate)}</span>
+            </div>
+            ` : ''}
+        </div>
+        
+        <div class="modal-actions">
+            ${!isReceived ? `
+                <button class="btn btn-success" onclick="markContainerAsReceived('${container.id}')">
+                    <i class="fas fa-check"></i> Marcar como Recebido
+                </button>
+            ` : `
+                <button class="btn btn-warning" onclick="markContainerAsUnreceived('${container.id}')">
+                    <i class="fas fa-undo"></i> Marcar como Não Recebido
+                </button>
+            `}
+        </div>
     `;
     
     modal.style.display = 'block';
 }
 
-function formatDate(dateString) {
-    if (!dateString) return 'N/A';
+function formatDateTime(dateString) {
+    if (!dateString || dateString === '') return 'N/A';
     
     try {
         const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'N/A';
+        
+        return date.toLocaleDateString('pt-PT', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (error) {
+        return 'N/A';
+    }
+}
+
+async function markContainerAsReceived(containerId) {
+    try {
+        const response = await fetch(`/api/containers/${containerId}/received`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification('Contentor marcado como recebido com sucesso!', 'success');
+            
+            // Fechar modal
+            const modal = document.getElementById('containerModal');
+            if (modal) modal.style.display = 'none';
+            
+            // Recarregar dados
+            await loadContainers();
+            
+        } else {
+            showNotification(result.error || 'Erro ao marcar contentor como recebido', 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao marcar contentor como recebido:', error);
+        showNotification('Erro ao marcar contentor como recebido', 'error');
+    }
+}
+
+async function markContainerAsUnreceived(containerId) {
+    try {
+        const response = await fetch(`/api/containers/${containerId}/unreceived`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification('Contentor marcado como não recebido com sucesso!', 'success');
+            
+            // Fechar modal
+            const modal = document.getElementById('containerModal');
+            if (modal) modal.style.display = 'none';
+            
+            // Recarregar dados
+            await loadContainers();
+            
+        } else {
+            showNotification(result.error || 'Erro ao marcar contentor como não recebido', 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao marcar contentor como não recebido:', error);
+        showNotification('Erro ao marcar contentor como não recebido', 'error');
+    }
+}
+
+function formatDate(dateString) {
+    if (!dateString || dateString === '' || dateString === 'Dia Prev.') return 'N/A';
+    
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'N/A';
+        
         return date.toLocaleDateString('pt-PT', {
             day: '2-digit',
             month: '2-digit',
             year: 'numeric'
         });
     } catch (error) {
-        return dateString;
+        return 'N/A';
     }
 }
 
@@ -1936,6 +2437,255 @@ if (containerModal) {
             containerModal.style.display = 'none';
         }
     });
+}
+
+// EXPEDIÇÕES
+async function loadExpeditions() {
+    try {
+        console.log('Carregando expedições...');
+        const response = await fetch('/api/expeditions');
+        expeditions = await response.json();
+        console.log('Expedições carregadas:', expeditions.length);
+        renderExpeditions();
+        updateExpeditionStats();
+        await checkExpeditionAlerts();
+        return expeditions;
+    } catch (error) {
+        console.error('Erro ao carregar expedições:', error);
+        showNotification('Erro ao carregar expedições', 'error');
+    }
+}
+
+async function importExpeditionsExcelData() {
+    try {
+        const response = await fetch('/api/expeditions/import-excel', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showNotification(`${result.message}: ${result.processed} expedições processadas`, 'success');
+            await loadExpeditions(); // Recarregar dados
+        } else {
+            const error = await response.json();
+            showNotification(error.error, 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao importar Excel de expedições:', error);
+        showNotification('Erro ao importar ficheiro Excel de expedições', 'error');
+    }
+}
+
+function renderExpeditions() {
+    console.log('Renderizando expedições...');
+    const tableBody = document.getElementById('expeditionsTableBody');
+    if (!tableBody) {
+        console.error('Elemento expeditionsTableBody não encontrado!');
+        return;
+    }
+    
+    console.log('Número de expedições a renderizar:', expeditions.length);
+    tableBody.innerHTML = '';
+    
+    expeditions.forEach(expedition => {
+        const row = document.createElement('tr');
+        
+        // Definir classe baseada na prioridade
+        let priorityClass = '';
+        const priority = expedition.priority?.toLowerCase();
+        if (priority?.includes('alta') || priority?.includes('urgente')) {
+            priorityClass = 'priority-high';
+        } else if (priority?.includes('média') || priority?.includes('medium')) {
+            priorityClass = 'priority-medium';
+        } else if (priority?.includes('baixa') || priority?.includes('low')) {
+            priorityClass = 'priority-low';
+        }
+        
+        row.className = priorityClass;
+        
+        // Definir classe baseada no status
+        let statusClass = '';
+        const status = expedition.status?.toLowerCase();
+        if (status?.includes('concluída') || status?.includes('entregue')) {
+            statusClass = 'status-completed';
+        } else if (status?.includes('em curso') || status?.includes('expedida')) {
+            statusClass = 'status-in-progress';
+        } else if (status?.includes('pendente') || status?.includes('aguarda')) {
+            statusClass = 'status-pending';
+        }
+        
+        row.innerHTML = `
+            <td>${expedition.expedition_week || 'N/A'}</td>
+            <td><span class="priority-badge priority-${priority || 'none'}">${expedition.priority || 'N/A'}</span></td>
+            <td>${expedition.expedition_day_week || 'N/A'}</td>
+            <td>${formatDate(expedition.expedition_date)}</td>
+            <td>${expedition.client || 'N/A'}</td>
+            <td>${expedition.client_manager || 'N/A'}</td>
+            <td>${expedition.content || 'N/A'}</td>
+            <td>${expedition.quantity || 'N/A'}</td>
+            <td>${expedition.current_location || 'N/A'}</td>
+            <td>${expedition.volume_type || 'N/A'}</td>
+            <td>${expedition.delivery_location || 'N/A'}</td>
+            <td><span class="status-badge ${statusClass}">${expedition.status || 'N/A'}</span></td>
+        `;
+        
+        tableBody.appendChild(row);
+    });
+}
+
+function updateExpeditionStats() {
+    const totalExpeditionsEl = document.getElementById('totalExpeditions');
+    const urgentExpeditionsEl = document.getElementById('urgentExpeditions');
+    const upcomingExpeditionsEl = document.getElementById('upcomingExpeditions');
+    const completedExpeditionsEl = document.getElementById('completedExpeditions');
+    
+    if (!totalExpeditionsEl) return;
+    
+    const total = expeditions.length;
+    
+    // Expedições de alta prioridade
+    const urgent = expeditions.filter(e => {
+        const priority = e.priority?.toLowerCase();
+        return priority?.includes('alta') || priority?.includes('urgente');
+    }).length;
+    
+    // Expedições nos próximos 5 dias úteis
+    const today = new Date();
+    const next5WorkDays = new Date();
+    let daysAdded = 0;
+    let currentDate = new Date(today);
+    
+    while (daysAdded < 5) {
+        currentDate.setDate(currentDate.getDate() + 1);
+        if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
+            daysAdded++;
+        }
+    }
+    
+    const upcoming = expeditions.filter(e => {
+        if (!e.expedition_date) return false;
+        const expeditionDate = new Date(e.expedition_date);
+        return expeditionDate >= today && expeditionDate <= currentDate;
+    }).length;
+    
+    // Expedições concluídas
+    const completed = expeditions.filter(e => {
+        const status = e.status?.toLowerCase();
+        return status?.includes('concluída') || status?.includes('entregue');
+    }).length;
+    
+    totalExpeditionsEl.textContent = total;
+    urgentExpeditionsEl.textContent = urgent;
+    upcomingExpeditionsEl.textContent = upcoming;
+    completedExpeditionsEl.textContent = completed;
+}
+
+async function checkExpeditionAlerts() {
+    try {
+        const response = await fetch('/api/expeditions/alerts');
+        const alerts = await response.json();
+        
+        const alertsSection = document.getElementById('expeditionAlertsSection');
+        const alertsList = document.getElementById('expeditionAlertsList');
+        
+        if (!alertsSection || !alertsList) return;
+        
+        if (alerts.length > 0) {
+            alertsSection.style.display = 'block';
+            alertsList.innerHTML = '';
+            
+            alerts.forEach(expedition => {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert-item expedition-alert';
+                
+                const expeditionDate = new Date(expedition.expedition_date);
+                const today = new Date();
+                const daysUntil = Math.ceil((expeditionDate - today) / (1000 * 60 * 60 * 24));
+                
+                // Definir classe de prioridade baseada nos dias e prioridade da expedição
+                let priorityClass = '';
+                const priority = expedition.priority?.toLowerCase();
+                
+                if (priority?.includes('alta') || priority?.includes('urgente') || daysUntil <= 1) {
+                    priorityClass = 'alert-urgent';
+                } else if (daysUntil <= 3) {
+                    priorityClass = 'alert-warning';
+                } else {
+                    priorityClass = 'alert-normal';
+                }
+                
+                alertDiv.classList.add(priorityClass);
+                
+                alertDiv.innerHTML = `
+                    <h4>${expedition.client} - ${expedition.content}</h4>
+                    <p><strong>Prioridade:</strong> ${expedition.priority || 'N/A'}</p>
+                    <p><strong>Quantidade:</strong> ${expedition.quantity || 'N/A'}</p>
+                    <p><strong>Local Atual:</strong> ${expedition.current_location || 'N/A'}</p>
+                    <p><strong>Entrega:</strong> ${expedition.delivery_location || 'N/A'}</p>
+                    <p class="alert-date">Expedição: ${formatDate(expedition.expedition_date)} (${daysUntil} dias)</p>
+                `;
+                
+                alertsList.appendChild(alertDiv);
+            });
+            
+            // Configurar altura máxima para animação de colapso
+            setTimeout(() => {
+                if (!alertsList.classList.contains('collapsed')) {
+                    alertsList.style.maxHeight = alertsList.scrollHeight + 'px';
+                }
+            }, 100);
+        } else {
+            alertsSection.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Erro ao verificar alertas de expedições:', error);
+    }
+}
+
+// Função para alternar a visibilidade da seção de alertas de expedições
+function toggleExpeditionsSection() {
+    const alertsSection = document.getElementById('expeditionAlertsSection');
+    const collapseBtn = document.getElementById('collapseExpeditionsBtn');
+    
+    if (!alertsSection || !collapseBtn) return;
+    
+    if (alertsSection.style.display === 'none') {
+        alertsSection.style.display = 'block';
+        collapseBtn.classList.remove('rotated');
+    } else {
+        alertsSection.style.display = 'none';
+        collapseBtn.classList.add('rotated');
+    }
+}
+
+// Função para colapsar/expandir apenas o conteúdo dos alertas de expedições
+function toggleExpeditionsCollapse() {
+    const alertsList = document.getElementById('expeditionAlertsList');
+    const collapseBtn = document.getElementById('collapseExpeditionsBtn');
+    
+    if (!alertsList || !collapseBtn) return;
+    
+    if (alertsList.classList.contains('collapsed')) {
+        // Expandir
+        alertsList.classList.remove('collapsed');
+        alertsList.style.maxHeight = alertsList.scrollHeight + 'px';
+        collapseBtn.classList.remove('rotated');
+    } else {
+        // Colapsar
+        alertsList.style.maxHeight = alertsList.scrollHeight + 'px';
+        alertsList.offsetHeight;
+        alertsList.classList.add('collapsed');
+        collapseBtn.classList.add('rotated');
+    }
+}
+
+// Event Listeners para Expedições
+const importExpeditionsExcelBtn = document.getElementById('importExpeditionsExcelBtn');
+if (importExpeditionsExcelBtn) {
+    importExpeditionsExcelBtn.addEventListener('click', importExpeditionsExcelData);
 }
 
 // === FUNCIONALIDADES DA FROTA ===
@@ -2205,7 +2955,22 @@ function updateReservationsTable() {
         return;
     }
 
-    tbody.innerHTML = reservations.map(reservation => `
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // Fim do dia atual para comparação
+
+    tbody.innerHTML = reservations.map(reservation => {
+        const endDate = new Date(reservation.end_date);
+        
+        // Verificar se a reserva deve ser automaticamente concluída
+        const shouldAutoComplete = endDate < today && reservation.status === 'active';
+        
+        // Se deve ser auto-concluída, fazer isso em segundo plano
+        if (shouldAutoComplete) {
+            console.log(`Reserva expirada detectada: ${reservation.id} (fim: ${reservation.end_date})`);
+            setTimeout(() => autoCompleteReservation(reservation.id), 100);
+        }
+        
+        return `
         <tr>
             <td>${reservation.brand} ${reservation.model} (${reservation.license_plate})</td>
             <td>${reservation.user_name}</td>
@@ -2214,6 +2979,11 @@ function updateReservationsTable() {
             <td>${reservation.purpose || 'N/A'}</td>
             <td><span class="status-badge ${reservation.status}">${getStatusText(reservation.status)}</span></td>
             <td>
+                ${reservation.status === 'active' ? `
+                    <button class="btn btn-sm btn-success" onclick="completeReservation('${reservation.id}')" title="Concluir Reserva">
+                        <i class="fas fa-check"></i>
+                    </button>
+                ` : ''}
                 <button class="btn btn-sm btn-primary" onclick="editReservation('${reservation.id}')">
                     <i class="fas fa-edit"></i>
                 </button>
@@ -2222,7 +2992,8 @@ function updateReservationsTable() {
                 </button>
             </td>
         </tr>
-    `).join('');
+    `;
+    }).join('');
 }
 
 // Atualizar tabela de manutenções
@@ -2244,6 +3015,11 @@ function updateMaintenanceTable() {
             <td><span class="status-badge ${maint.status}">${getStatusText(maint.status)}</span></td>
             <td>${maint.cost ? `€${parseFloat(maint.cost).toFixed(2)}` : 'N/A'}</td>
             <td>
+                ${maint.status !== 'completed' ? `
+                    <button class="btn btn-sm btn-success" onclick="completeMaintenance('${maint.id}')" title="Concluir Manutenção">
+                        <i class="fas fa-check"></i>
+                    </button>
+                ` : ''}
                 <button class="btn btn-sm btn-primary" onclick="editMaintenance('${maint.id}')">
                     <i class="fas fa-edit"></i>
                 </button>
@@ -2475,6 +3251,87 @@ async function deleteReservation(reservationId) {
     }
 }
 
+async function completeReservation(reservationId) {
+    if (!confirm('Tem certeza que deseja marcar esta reserva como concluída?')) return;
+    
+    try {
+        // Obter dados da reserva atual
+        const reservationData = reservations.find(r => r.id === reservationId);
+        if (!reservationData) {
+            showNotification('Reserva não encontrada', 'error');
+            return;
+        }
+        
+        // Preparar dados para atualização
+        const updatedData = {
+            vehicleId: reservationData.vehicle_id,
+            userName: reservationData.user_name,
+            startDate: reservationData.start_date,
+            endDate: reservationData.end_date,
+            purpose: reservationData.purpose,
+            status: 'completed',
+            mileageStart: reservationData.mileage_start,
+            mileageEnd: reservationData.mileage_end
+        };
+        
+        const response = await fetch(`/api/vehicle-reservations/${reservationId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updatedData)
+        });
+        
+        if (response.ok) {
+            showNotification('Reserva concluída com sucesso', 'success');
+            loadFleetData();
+        } else {
+            const error = await response.json();
+            showNotification(error.error || 'Erro ao concluir reserva', 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao concluir reserva:', error);
+        showNotification('Erro ao concluir reserva', 'error');
+    }
+}
+
+async function autoCompleteReservation(reservationId) {
+    try {
+        // Obter dados da reserva atual
+        const reservationData = reservations.find(r => r.id === reservationId);
+        if (!reservationData || reservationData.status !== 'active') {
+            return; // Não fazer nada se a reserva não existir ou já não estiver ativa
+        }
+        
+        // Preparar dados para atualização automática
+        const updatedData = {
+            vehicleId: reservationData.vehicle_id,
+            userName: reservationData.user_name,
+            startDate: reservationData.start_date,
+            endDate: reservationData.end_date,
+            purpose: reservationData.purpose,
+            status: 'completed',
+            mileageStart: reservationData.mileage_start,
+            mileageEnd: reservationData.mileage_end
+        };
+        
+        const response = await fetch(`/api/vehicle-reservations/${reservationId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updatedData)
+        });
+        
+        if (response.ok) {
+            // Recarregar dados silenciosamente (sem notificação para auto-conclusão)
+            loadFleetData();
+        }
+    } catch (error) {
+        console.error('Erro ao auto-concluir reserva:', error);
+    }
+}
+
 // Funções CRUD para Manutenções
 function openMaintenanceModal(maintenanceId = null) {
     const modal = document.getElementById('maintenanceModal');
@@ -2541,6 +3398,52 @@ async function deleteMaintenance(maintenanceId) {
     } catch (error) {
         console.error('Erro ao eliminar manutenção:', error);
         showNotification('Erro ao eliminar manutenção', 'error');
+    }
+}
+
+async function completeMaintenance(maintenanceId) {
+    if (!confirm('Tem certeza que deseja marcar esta manutenção como concluída?')) return;
+    
+    try {
+        // Obter dados da manutenção atual
+        const maintenanceData = maintenance.find(m => m.id === maintenanceId);
+        if (!maintenanceData) {
+            showNotification('Manutenção não encontrada', 'error');
+            return;
+        }
+        
+        // Preparar dados para atualização
+        const updatedData = {
+            vehicleId: maintenanceData.vehicle_id,
+            maintenanceType: maintenanceData.maintenance_type,
+            description: maintenanceData.description,
+            cost: maintenanceData.cost,
+            scheduledDate: maintenanceData.scheduled_date,
+            completedDate: new Date().toISOString().split('T')[0],
+            nextMaintenanceDate: maintenanceData.next_maintenance_date,
+            mileageAtMaintenance: maintenanceData.mileage_at_maintenance,
+            status: 'completed',
+            priority: maintenanceData.priority
+        };
+        
+        const response = await fetch(`/api/vehicle-maintenance/${maintenanceId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updatedData)
+        });
+        
+        if (response.ok) {
+            showNotification('Manutenção concluída com sucesso', 'success');
+            loadFleetData();
+        } else {
+            const error = await response.json();
+            showNotification(error.error || 'Erro ao concluir manutenção', 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao concluir manutenção:', error);
+        showNotification('Erro ao concluir manutenção', 'error');
     }
 }
 
@@ -2771,6 +3674,475 @@ document.addEventListener('DOMContentLoaded', function() {
                     loadFleetData();
                 }, 100);
             }
+            
+            // Carregar veículos para relatórios quando a aba de relatórios for acessada
+            if (page === 'fleet') {
+                setTimeout(() => {
+                    loadVehiclesForReport();
+                }, 200);
+            }
         });
     });
 });
+
+// FUNÇÕES DE RELATÓRIOS
+async function generateVehicleReport() {
+    const vehicleId = reportVehicleSelect.value;
+    const dateFrom = reportDateFrom.value;
+    const dateTo = reportDateTo.value;
+
+    if (!vehicleId) {
+        showNotification('Por favor, selecione um veículo', 'warning');
+        return;
+    }
+
+    try {
+        generateReportBtn.disabled = true;
+        generateReportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando...';
+
+        const response = await fetch(`/api/vehicles/${vehicleId}/report`);
+        
+        if (!response.ok) {
+            throw new Error('Erro ao carregar dados do relatório');
+        }
+
+        const data = await response.json();
+        
+        // Filtrar dados por data se especificado
+        let filteredReservations = data.reservations;
+        let filteredMaintenances = data.maintenances;
+
+        if (dateFrom) {
+            filteredReservations = filteredReservations.filter(r => 
+                new Date(r.start_date) >= new Date(dateFrom)
+            );
+            filteredMaintenances = filteredMaintenances.filter(m => 
+                m.scheduled_date && new Date(m.scheduled_date) >= new Date(dateFrom)
+            );
+        }
+
+        if (dateTo) {
+            filteredReservations = filteredReservations.filter(r => 
+                new Date(r.end_date) <= new Date(dateTo)
+            );
+            filteredMaintenances = filteredMaintenances.filter(m => 
+                m.scheduled_date && new Date(m.scheduled_date) <= new Date(dateTo)
+            );
+        }
+
+        displayReport(data.vehicle, filteredReservations, filteredMaintenances, dateFrom, dateTo);
+        exportPdfBtn.disabled = false;
+
+    } catch (error) {
+        console.error('Erro ao gerar relatório:', error);
+        showNotification('Erro ao gerar relatório', 'error');
+    } finally {
+        generateReportBtn.disabled = false;
+        generateReportBtn.innerHTML = '<i class="fas fa-chart-line"></i> Ver Relatório';
+    }
+}
+
+function displayReport(vehicle, reservations, maintenances, dateFrom, dateTo) {
+    // Atualizar título
+    const reportTitle = document.getElementById('reportTitle');
+    if (reportTitle) {
+        reportTitle.textContent = `Relatório: ${vehicle.brand} ${vehicle.model} (${vehicle.license_plate})`;
+    }
+
+    // Calcular estatísticas
+    const totalCost = maintenances.reduce((sum, m) => sum + (m.cost || 0), 0);
+    const completedReservations = reservations.filter(r => r.status === 'completed').length;
+    const completedMaintenances = maintenances.filter(m => m.status === 'completed').length;
+
+    // Atualizar resumo
+    const reportSummary = document.getElementById('reportSummary');
+    if (reportSummary) {
+        const period = dateFrom && dateTo 
+            ? `${new Date(dateFrom).toLocaleDateString('pt-PT')} - ${new Date(dateTo).toLocaleDateString('pt-PT')}`
+            : 'Todos os registos';
+
+        reportSummary.innerHTML = `
+            <div class="summary-card">
+                <span class="summary-number">${reservations.length}</span>
+                <span class="summary-label">Total Reservas</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-number">${completedReservations}</span>
+                <span class="summary-label">Reservas Concluídas</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-number">${maintenances.length}</span>
+                <span class="summary-label">Total Manutenções</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-number">€${totalCost.toFixed(2)}</span>
+                <span class="summary-label">Custo Manutenções</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-number">${vehicle.mileage.toLocaleString()}</span>
+                <span class="summary-label">Quilometragem</span>
+            </div>
+            <div style="grid-column: 1 / -1; text-align: center; margin-top: 10px; font-size: 14px; opacity: 0.9;">
+                Período: ${period}
+            </div>
+        `;
+    }
+
+    // Preencher tabela de reservas
+    const reservationsBody = document.getElementById('reportReservationsBody');
+    if (reservationsBody) {
+        if (reservations.length > 0) {
+            reservationsBody.innerHTML = reservations.map(reservation => `
+                <tr>
+                    <td>${reservation.user_name}</td>
+                    <td>${new Date(reservation.start_date).toLocaleDateString('pt-PT')}</td>
+                    <td>${new Date(reservation.end_date).toLocaleDateString('pt-PT')}</td>
+                    <td>${reservation.purpose || '-'}</td>
+                    <td><span class="status status-${reservation.status}">${getStatusText(reservation.status)}</span></td>
+                    <td>${reservation.mileage_start || '-'}</td>
+                    <td>${reservation.mileage_end || '-'}</td>
+                </tr>
+            `).join('');
+        } else {
+            reservationsBody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="no-data-message">Nenhuma reserva encontrada para o período selecionado</td>
+                </tr>
+            `;
+        }
+    }
+
+    // Preencher tabela de manutenções
+    const maintenanceBody = document.getElementById('reportMaintenanceBody');
+    if (maintenanceBody) {
+        if (maintenances.length > 0) {
+            maintenanceBody.innerHTML = maintenances.map(maintenance => `
+                <tr>
+                    <td>${maintenance.maintenance_type}</td>
+                    <td>${maintenance.description || '-'}</td>
+                    <td>${maintenance.scheduled_date ? new Date(maintenance.scheduled_date).toLocaleDateString('pt-PT') : '-'}</td>
+                    <td>${maintenance.completed_date ? new Date(maintenance.completed_date).toLocaleDateString('pt-PT') : '-'}</td>
+                    <td>€${(maintenance.cost || 0).toFixed(2)}</td>
+                    <td><span class="status status-${maintenance.status}">${getStatusText(maintenance.status)}</span></td>
+                    <td>${maintenance.mileage_at_maintenance || '-'} km</td>
+                </tr>
+            `).join('');
+        } else {
+            maintenanceBody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="no-data-message">Nenhuma manutenção encontrada para o período selecionado</td>
+                </tr>
+            `;
+        }
+    }
+
+    // Mostrar conteúdo do relatório
+    reportContent.style.display = 'block';
+    reportContent.scrollIntoView({ behavior: 'smooth' });
+}
+
+async function exportReportToPdf() {
+    const vehicleId = reportVehicleSelect.value;
+    const dateFrom = reportDateFrom.value;
+    const dateTo = reportDateTo.value;
+
+    if (!vehicleId) {
+        showNotification('Por favor, selecione um veículo', 'warning');
+        return;
+    }
+
+    try {
+        exportPdfBtn.disabled = true;
+        exportPdfBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando PDF...';
+
+        const response = await fetch(`/api/vehicles/${vehicleId}/report/pdf`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ dateFrom, dateTo })
+        });
+
+        if (!response.ok) {
+            throw new Error('Erro ao gerar PDF');
+        }
+
+        // Criar blob e download
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        
+        // Obter nome do arquivo do header ou criar um padrão
+        const disposition = response.headers.get('Content-Disposition');
+        let filename = 'relatorio_veiculo.pdf';
+        if (disposition && disposition.includes('filename=')) {
+            filename = disposition.split('filename=')[1].replace(/"/g, '');
+        }
+        
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        showNotification('PDF gerado com sucesso!', 'success');
+
+    } catch (error) {
+        console.error('Erro ao exportar PDF:', error);
+        showNotification('Erro ao gerar PDF', 'error');
+    } finally {
+        exportPdfBtn.disabled = false;
+        exportPdfBtn.innerHTML = '<i class="fas fa-file-pdf"></i> Exportar PDF';
+    }
+}
+
+async function loadVehiclesForReport() {
+    try {
+        const response = await fetch('/api/vehicles');
+        const vehicles = await response.json();
+        
+        if (reportVehicleSelect) {
+            reportVehicleSelect.innerHTML = '<option value="">Selecione um veículo...</option>';
+            vehicles.forEach(vehicle => {
+                const option = document.createElement('option');
+                option.value = vehicle.id;
+                option.textContent = `${vehicle.brand} ${vehicle.model} (${vehicle.license_plate})`;
+                reportVehicleSelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Erro ao carregar veículos:', error);
+    }
+}
+
+// ============================================================================
+// TELEFONES INTERNOS
+// ============================================================================
+
+let phones = [];
+
+async function loadPhones() {
+    try {
+        const response = await fetch('/api/phones');
+        if (!response.ok) {
+            throw new Error('Erro ao carregar telefones');
+        }
+        
+        phones = await response.json();
+        allPhones = phones; // Armazenar na variável global para pesquisa no dashboard
+        displayPhones(phones);
+    } catch (error) {
+        console.error('Erro ao carregar telefones:', error);
+        allPhones = []; // Resetar em caso de erro
+        const phonesGrid = document.getElementById('phonesGrid');
+        if (phonesGrid) {
+            phonesGrid.innerHTML = `
+                <div class="error-message">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Erro ao carregar lista de telefones. Verifique se o ficheiro telefones.xlsx existe.</p>
+                </div>
+            `;
+        }
+    }
+}
+
+function displayPhones(phonesToDisplay) {
+    const phonesGrid = document.getElementById('phonesGrid');
+    if (!phonesGrid) return;
+    
+    if (phonesToDisplay.length === 0) {
+        phonesGrid.innerHTML = `
+            <div class="no-phones-message">
+                <i class="fas fa-phone-slash"></i>
+                <p>Nenhum telefone encontrado</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Agrupar telefones por setor
+    const phonesBySector = {};
+    phonesToDisplay.forEach(phone => {
+        const sector = phone.sector || 'Sem Setor';
+        if (!phonesBySector[sector]) {
+            phonesBySector[sector] = [];
+        }
+        phonesBySector[sector].push(phone);
+    });
+    
+    // Gerar HTML agrupado por setor
+    let html = '';
+    Object.keys(phonesBySector).sort().forEach(sector => {
+        html += `
+            <div class="phone-sector">
+                <h3 class="sector-title">
+                    <i class="fas fa-building"></i>
+                    ${sector}
+                </h3>
+                <div class="phone-list">
+        `;
+        
+        phonesBySector[sector].forEach(phone => {
+            html += `
+                <div class="phone-card">
+                    <div class="phone-info">
+                        <div class="phone-name">
+                            <i class="fas fa-user"></i>
+                            ${phone.name}
+                        </div>
+                        <div class="phone-extension">
+                            <i class="fas fa-phone"></i>
+                            <span class="extension-number">${phone.extension}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    });
+    
+    phonesGrid.innerHTML = html;
+}
+
+function searchPhones(searchTerm) {
+    const normalizedSearch = normalizeText(searchTerm);
+    
+    if (!normalizedSearch) {
+        displayPhones(phones);
+        return;
+    }
+    
+    const filtered = phones.filter(phone => {
+        const sector = normalizeText(phone.sector);
+        const name = normalizeText(phone.name);
+        const extension = normalizeText(phone.extension);
+        
+        return sector.includes(normalizedSearch) ||
+               name.includes(normalizedSearch) ||
+               extension.includes(normalizedSearch);
+    });
+    
+    displayPhones(filtered);
+}
+
+// Setup event listeners para telefones
+function setupPhonesEventListeners() {
+    const phoneSearch = document.getElementById('phoneSearch');
+    if (phoneSearch) {
+        phoneSearch.addEventListener('input', (e) => {
+            searchPhones(e.target.value);
+        });
+    }
+    
+    // Setup para pesquisa rápida no dashboard
+    setupDashboardPhoneSearch();
+}
+
+// Variável global para armazenar os telefones
+let allPhones = [];
+
+// Setup da pesquisa de telefones no dashboard
+function setupDashboardPhoneSearch() {
+    const dashboardPhoneSearch = document.getElementById('dashboardPhoneSearch');
+    const resultsDropdown = document.getElementById('dashboardPhoneResults');
+    
+    if (!dashboardPhoneSearch || !resultsDropdown) return;
+    
+    // Evento de input para pesquisa em tempo real
+    dashboardPhoneSearch.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.trim();
+        
+        if (searchTerm.length < 2) {
+            resultsDropdown.classList.remove('show');
+            return;
+        }
+        
+        searchDashboardPhones(searchTerm);
+    });
+    
+    // Fechar dropdown ao clicar fora
+    document.addEventListener('click', (e) => {
+        if (!dashboardPhoneSearch.contains(e.target) && !resultsDropdown.contains(e.target)) {
+            resultsDropdown.classList.remove('show');
+        }
+    });
+    
+    // Focar no input ao clicar no container
+    const searchContainer = dashboardPhoneSearch.parentElement;
+    searchContainer.addEventListener('click', (e) => {
+        if (e.target !== dashboardPhoneSearch) {
+            dashboardPhoneSearch.focus();
+        }
+    });
+}
+
+// Pesquisar telefones no dashboard
+function searchDashboardPhones(searchTerm) {
+    const resultsDropdown = document.getElementById('dashboardPhoneResults');
+    
+    if (!allPhones || allPhones.length === 0) {
+        resultsDropdown.innerHTML = `
+            <div class="phone-result-empty">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>Nenhum telefone disponível</p>
+            </div>
+        `;
+        resultsDropdown.classList.add('show');
+        return;
+    }
+    
+    const normalizedSearch = normalizeText(searchTerm);
+    
+    // Filtrar telefones que correspondem à pesquisa
+    const results = allPhones.filter(phone => {
+        const sector = normalizeText(phone.sector || '');
+        const name = normalizeText(phone.name || '');
+        const extension = normalizeText(phone.extension || '');
+        
+        return sector.includes(normalizedSearch) || 
+               name.includes(normalizedSearch) || 
+               extension.includes(normalizedSearch);
+    });
+    
+    if (results.length === 0) {
+        resultsDropdown.innerHTML = `
+            <div class="phone-result-empty">
+                <i class="fas fa-search"></i>
+                <p>Nenhum resultado encontrado para "${searchTerm}"</p>
+            </div>
+        `;
+        resultsDropdown.classList.add('show');
+        return;
+    }
+    
+    // Limitar a 8 resultados
+    const limitedResults = results.slice(0, 8);
+    
+    resultsDropdown.innerHTML = limitedResults.map(phone => `
+        <div class="phone-result-item">
+            <div class="phone-result-sector">${phone.sector || 'Sem setor'}</div>
+            <div class="phone-result-name">${phone.name || 'Sem nome'}</div>
+            <div class="phone-result-extension">
+                <i class="fas fa-phone"></i> ${phone.extension || 'N/A'}
+            </div>
+        </div>
+    `).join('');
+    
+    if (results.length > 8) {
+        resultsDropdown.innerHTML += `
+            <div class="phone-result-item" style="text-align: center; color: var(--text-muted); font-style: italic; cursor: default;">
+                +${results.length - 8} resultados adicionais...
+            </div>
+        `;
+    }
+    
+    resultsDropdown.classList.add('show');
+}
+
+

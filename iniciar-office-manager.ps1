@@ -1,8 +1,8 @@
-# Office Manager - Script de Inicialização
+# Artur Salvado - Script de Inicialização
 # PowerShell Script para Windows
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "      OFFICE MANAGER - INICIANDO..." -ForegroundColor Yellow
+Write-Host "      ARTUR SALVADO - INICIANDO..." -ForegroundColor Yellow
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -55,7 +55,7 @@ try {
     
     Write-Host ""
     Write-Host "========================================" -ForegroundColor Green
-    Write-Host "   OFFICE MANAGER ESTÁ A CORRER!" -ForegroundColor Yellow
+    Write-Host "   ARTUR SALVADO ESTÁ A CORRER!" -ForegroundColor Yellow
     Write-Host "   Browser: http://localhost:3000" -ForegroundColor Cyan
     Write-Host "   Para parar: Pressione Ctrl+C" -ForegroundColor Cyan
     Write-Host "========================================" -ForegroundColor Green

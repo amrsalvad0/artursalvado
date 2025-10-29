@@ -1,28 +1,29 @@
 @echo off
-title Office Manager
+title Artur Salvado
 color 0A
 
 echo.
 echo  ╔══════════════════════════════════════╗
-echo  ║          OFFICE MANAGER              ║
+echo  ║           ARTUR SALVADO              ║
 echo  ║      Gestão de Reuniões e Tarefas    ║
 echo  ╚══════════════════════════════════════╝
 echo.
 
 cd /d "%~dp0"
 
-echo [INFO] Iniciando Office Manager...
+echo [INFO] Iniciando Artur Salvado...
 echo [INFO] O browser abrirá automaticamente...
 echo.
 
 start /B npm start
 
-timeout /t 3 /nobreak >nul
+echo [OK] Artur Salvado iniciado!
+echo [INFO] URL: http://localhost:3000
+echo [INFO] O browser abrirá automaticamente em alguns segundos...
 
+timeout /t 5 /nobreak >nul
 start http://localhost:3000
 
-echo [OK] Office Manager iniciado!
-echo [INFO] URL: http://localhost:3000
 echo [INFO] Para parar: Feche esta janela
 echo.
 

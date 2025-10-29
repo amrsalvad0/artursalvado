@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Office Manager - Gestão de Reuniões e Tarefas</title>
+    <title>Artur Salvado - Gestão de Reuniões e Tarefas</title>
     <link rel="stylesheet" href="css/styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
@@ -13,7 +13,7 @@
         <!-- Menu Lateral -->
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h2><i class="fas fa-briefcase"></i> Office Manager</h2>
+                <h2><i class="fas fa-briefcase"></i> Artur Salvado</h2>
                 <button class="toggle-btn" id="toggleSidebar">
                     <i class="fas fa-bars"></i>
                 </button>
@@ -51,6 +51,18 @@
                         <span class="nav-text">Mercadorias</span>
                     </a>
                 </li>
+                <li class="nav-item" data-page="expeditions">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-truck"></i>
+                        <span class="nav-text">Expedições</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="phones">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-phone"></i>
+                        <span class="nav-text">Telefones</span>
+                    </a>
+                </li>
                 <li class="nav-item" data-page="backup">
                     <a href="#" class="nav-link">
                         <i class="fas fa-database"></i>
@@ -66,7 +78,11 @@
             <section id="dashboard" class="page active">
                 <div class="page-header">
                     <h1>Dashboard</h1>
-                    <p>Visão geral das suas reuniões e tarefas</p>
+                    <div class="dashboard-phone-search">
+                        <i class="fas fa-phone"></i>
+                        <input type="text" id="dashboardPhoneSearch" placeholder="Pesquisar telefones da empresa (setor, nome ou extensão)...">
+                        <div id="dashboardPhoneResults" class="phone-results-dropdown"></div>
+                    </div>
                 </div>
                 
                 <div class="dashboard-grid">
@@ -187,6 +203,18 @@
                     </div>
                 </div>
 
+                <div class="alerts-section" id="expeditionAlertsSection" style="display: none;">
+                    <div class="alerts-header">
+                        <h2>🚚 Alertas de Expedições (5 dias úteis)</h2>
+                        <button class="collapse-btn" id="collapseExpeditionsBtn">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                    </div>
+                    <div class="expedition-alerts collapsible-content" id="expeditionAlertsList">
+                        <!-- Alertas de expedições serão carregados dinamicamente -->
+                    </div>
+                </div>
+
                 <div class="alerts-section" id="meetingsAlertsSection" style="display: none;">
                     <div class="alerts-header">
                         <h2>📅 Reuniões de Hoje</h2>
@@ -297,6 +325,9 @@
                     <button class="tab-btn" data-tab="maintenance">
                         <i class="fas fa-tools"></i> Manutenções
                     </button>
+                    <button class="tab-btn" data-tab="reports">
+                        <i class="fas fa-chart-bar"></i> Relatórios
+                    </button>
                 </div>
 
                 <!-- Aba Viaturas -->
@@ -349,6 +380,94 @@
                         </table>
                     </div>
                 </div>
+
+                <!-- Aba Relatórios -->
+                <div class="tab-content" id="reports-tab">
+                    <div class="reports-container">
+                        <div class="report-filters">
+                            <h3>Gerar Relatório por Veículo</h3>
+                            <div class="filter-group">
+                                <div class="form-group">
+                                    <label for="reportVehicleSelect">Selecionar Veículo:</label>
+                                    <select id="reportVehicleSelect" class="form-control">
+                                        <option value="">Selecione um veículo...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="reportDateFrom">Data Início:</label>
+                                    <input type="date" id="reportDateFrom" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label for="reportDateTo">Data Fim:</label>
+                                    <input type="date" id="reportDateTo" class="form-control">
+                                </div>
+                            </div>
+                            <div class="report-actions">
+                                <button class="btn btn-primary" id="generateReportBtn">
+                                    <i class="fas fa-chart-line"></i> Ver Relatório
+                                </button>
+                                <button class="btn btn-danger" id="exportPdfBtn" disabled>
+                                    <i class="fas fa-file-pdf"></i> Exportar PDF
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="report-content" id="reportContent" style="display: none;">
+                            <div class="report-header">
+                                <h3 id="reportTitle">Relatório de Veículo</h3>
+                                <div class="report-summary" id="reportSummary">
+                                    <!-- Resumo será carregado dinamicamente -->
+                                </div>
+                            </div>
+
+                            <div class="report-sections">
+                                <div class="report-section">
+                                    <h4><i class="fas fa-calendar-check"></i> Reservas</h4>
+                                    <div class="report-table-wrapper">
+                                        <table class="data-table" id="reportReservationsTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Utilizador</th>
+                                                    <th>Data Início</th>
+                                                    <th>Data Fim</th>
+                                                    <th>Finalidade</th>
+                                                    <th>Estado</th>
+                                                    <th>Km Inicial</th>
+                                                    <th>Km Final</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="reportReservationsBody">
+                                                <!-- Reservas serão carregadas dinamicamente -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="report-section">
+                                    <h4><i class="fas fa-tools"></i> Manutenções</h4>
+                                    <div class="report-table-wrapper">
+                                        <table class="data-table" id="reportMaintenanceTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Tipo</th>
+                                                    <th>Descrição</th>
+                                                    <th>Data Agendada</th>
+                                                    <th>Data Conclusão</th>
+                                                    <th>Custo</th>
+                                                    <th>Estado</th>
+                                                    <th>Quilometragem</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="reportMaintenanceBody">
+                                                <!-- Manutenções serão carregadas dinamicamente -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- Mercadorias -->
@@ -378,7 +497,7 @@
                             </div>
                             <div class="stat-content">
                                 <h3>Total Expedições</h3>
-                                <span class="stat-number" id="totalExpeditions">0</span>
+                                <span class="stat-number" id="totalAirExpeditions">0</span>
                             </div>
                         </div>
                         
@@ -415,6 +534,7 @@
                                     <th>Tamanho</th>
                                     <th>Volumes</th>
                                     <th>Status</th>
+                                    <th>Receção</th>
                                     <th>Saída</th>
                                     <th>Chegada</th>
                                 </tr>
@@ -427,13 +547,113 @@
                 </div>
             </section>
 
+            <!-- Expedições -->
+            <section id="expeditions" class="page">
+                <div class="page-header">
+                    <h1>Gestão de Expedições</h1>
+                    <button class="btn btn-primary" id="importExpeditionsExcelBtn">
+                        <i class="fas fa-file-excel"></i> Importar Excel
+                    </button>
+                </div>
+                
+                <div class="expeditions-container">
+                    <div class="expeditions-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-truck"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>Total Expedições</h3>
+                                <span class="stat-number" id="totalExpeditions">0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card urgent">
+                            <div class="stat-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>Alta Prioridade</h3>
+                                <span class="stat-number" id="urgentExpeditions">0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>Próximos 5 Dias</h3>
+                                <span class="stat-number" id="upcomingExpeditions">0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>Concluídas</h3>
+                                <span class="stat-number" id="completedExpeditions">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="expeditions-table-wrapper">
+                        <table class="expeditions-table" id="expeditionsTable">
+                            <thead>
+                                <tr>
+                                    <th>Semana</th>
+                                    <th>Prioridade</th>
+                                    <th>Dia Semana</th>
+                                    <th>Data</th>
+                                    <th>Cliente</th>
+                                    <th>Responsável</th>
+                                    <th>Conteúdo</th>
+                                    <th>Quantidade</th>
+                                    <th>Localização</th>
+                                    <th>Tipo Volumes</th>
+                                    <th>Local Entrega</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expeditionsTableBody">
+                                <!-- Expedições serão carregadas dinamicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Telefones Internos -->
+            <section id="phones" class="page">
+                <div class="page-header">
+                    <h1>Telefones Internos</h1>
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="phoneSearch" placeholder="Pesquisar por setor, nome ou extensão...">
+                    </div>
+                </div>
+                
+                <div class="phones-container">
+                    <div class="phones-grid" id="phonesGrid">
+                        <!-- Telefones serão carregados dinamicamente -->
+                    </div>
+                </div>
+            </section>
+
             <!-- Backup -->
             <section id="backup" class="page">
                 <div class="page-header">
                     <h1>Sistema de Backup</h1>
-                    <button class="btn btn-primary" id="createBackupBtn">
-                        <i class="fas fa-save"></i> Criar Backup
-                    </button>
+                    <div class="backup-actions">
+                        <button class="btn btn-primary" id="createBackupBtn">
+                            <i class="fas fa-save"></i> Criar Backup
+                        </button>
+                        <button class="btn btn-warning" id="cleanOldBackupsBtn">
+                            <i class="fas fa-trash-alt"></i> Limpar Backups Antigos (15+ dias)
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="backup-container">
@@ -485,6 +705,38 @@
                         <input type="number" id="meetingDuration" value="60">
                     </div>
                 </div>
+                
+                <!-- Opções de Recorrência -->
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="isRecurring"> 
+                        <span class="checkmark"></span>
+                        Reunião Recorrente
+                    </label>
+                </div>
+                
+                <div id="recurrenceOptions" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="recurrenceType">Repetir</label>
+                            <select id="recurrenceType">
+                                <option value="daily">Diariamente</option>
+                                <option value="weekly" selected>Semanalmente</option>
+                                <option value="monthly">Mensalmente</option>
+                                <option value="yearly">Anualmente</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="recurrenceInterval">A cada</label>
+                            <input type="number" id="recurrenceInterval" value="1" min="1">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="recurrenceEndDate">Terminar em</label>
+                        <input type="date" id="recurrenceEndDate">
+                    </div>
+                </div>
+                
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" id="cancelMeeting">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Criar Reunião</button>

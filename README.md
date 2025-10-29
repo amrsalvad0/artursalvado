@@ -1,8 +1,8 @@
-# Office Manager - Sistema de Gestão de Reuniões e Tarefas
+# Artur Salvado - Sistema de Gestão de Reuniões e Tarefas
 
 ## 📋 Descrição
 
-O Office Manager é uma aplicação web moderna para gestão de reuniões e tarefas no escritório. A aplicação oferece uma interface intuitiva com menu lateral recolhível, sistema de notas em tempo real durante reuniões, criação de tarefas diretamente das reuniões e um sistema robusto de backup.
+O Artur Salvado é uma aplicação web moderna para gestão de reuniões e tarefas no escritório. A aplicação oferece uma interface intuitiva com menu lateral recolhível, sistema de notas em tempo real durante reuniões, criação de tarefas diretamente das reuniões e um sistema robusto de backup.
 
 ## 🚀 Características Principais
 
@@ -182,4 +182,4 @@ ISC License - Livre para uso pessoal e comercial.
 
 ---
 
-**Office Manager** - Organize o seu escritório com eficiência! 🏢✨
+**Artur Salvado** - Organize o seu escritório com eficiência! 🏢✨
