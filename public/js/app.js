@@ -4163,12 +4163,12 @@ function updateDashboardBanner() {
     if (meetingsToday.length > 0) {
         const activeCount = meetingsToday.filter(m => m.status === 'active').length;
         if (activeCount > 0) {
-            bannerItems.push(`<span class="banner-item success">📅 ${activeCount} reunião${activeCount > 1 ? 'ões' : ''} ativa${activeCount > 1 ? 's' : ''}</span>`);
+            bannerItems.push(`<span class="banner-item success" data-page="meetings">📅 ${activeCount} reunião${activeCount > 1 ? 'ões' : ''} ativa${activeCount > 1 ? 's' : ''}</span>`);
         } else {
-            bannerItems.push(`<span class="banner-item">📅 ${meetingsToday.length} reunião${meetingsToday.length > 1 ? 'ões' : ''} hoje</span>`);
+            bannerItems.push(`<span class="banner-item" data-page="meetings">📅 ${meetingsToday.length} reunião${meetingsToday.length > 1 ? 'ões' : ''} hoje</span>`);
         }
     } else {
-        bannerItems.push(`<span class="banner-item">📅 Sem reuniões agendadas hoje</span>`);
+        bannerItems.push(`<span class="banner-item" data-page="meetings">📅 Sem reuniões agendadas hoje</span>`);
     }
     
     // Tarefas pendentes
@@ -4177,12 +4177,12 @@ function updateDashboardBanner() {
     if (pendingTasks.length > 0) {
         const overdueTasks = pendingTasks.filter(t => t.due_date && new Date(t.due_date) < new Date());
         if (overdueTasks.length > 0) {
-            bannerItems.push(`<span class="banner-item alert">⚠️ ${overdueTasks.length} tarefa${overdueTasks.length > 1 ? 's' : ''} atrasada${overdueTasks.length > 1 ? 's' : ''}</span>`);
+            bannerItems.push(`<span class="banner-item alert" data-page="tasks">⚠️ ${overdueTasks.length} tarefa${overdueTasks.length > 1 ? 's' : ''} atrasada${overdueTasks.length > 1 ? 's' : ''}</span>`);
         } else {
-            bannerItems.push(`<span class="banner-item">📋 ${pendingTasks.length} tarefa${pendingTasks.length > 1 ? 's' : ''} pendente${pendingTasks.length > 1 ? 's' : ''} • ${completedTasks.length} concluída${completedTasks.length > 1 ? 's' : ''}</span>`);
+            bannerItems.push(`<span class="banner-item" data-page="tasks">📋 ${pendingTasks.length} tarefa${pendingTasks.length > 1 ? 's' : ''} pendente${pendingTasks.length > 1 ? 's' : ''} • ${completedTasks.length} concluída${completedTasks.length > 1 ? 's' : ''}</span>`);
         }
     } else {
-        bannerItems.push(`<span class="banner-item success">✅ Todas as tarefas concluídas (${completedTasks.length})</span>`);
+        bannerItems.push(`<span class="banner-item success" data-page="tasks">✅ Todas as tarefas concluídas (${completedTasks.length})</span>`);
     }
     
     // Contentores Marítimos e Expedições Aéreas
@@ -4206,17 +4206,17 @@ function updateDashboardBanner() {
             });
             
             if (urgentAlerts.length > 0) {
-                bannerItems.push(`<span class="banner-item alert">🚢 ${urgentAlerts.length} contentor${urgentAlerts.length > 1 ? 'es' : ''} urgente${urgentAlerts.length > 1 ? 's' : ''} (≤2 dias)</span>`);
+                bannerItems.push(`<span class="banner-item alert" data-page="containers">🚢 ${urgentAlerts.length} contentor${urgentAlerts.length > 1 ? 'es' : ''} urgente${urgentAlerts.length > 1 ? 's' : ''} (≤2 dias)</span>`);
             } else {
-                bannerItems.push(`<span class="banner-item warning">🚢 ${maritimeAlerts.length} contentor${maritimeAlerts.length > 1 ? 'es' : ''} chegando (≤7 dias)</span>`);
+                bannerItems.push(`<span class="banner-item warning" data-page="containers">🚢 ${maritimeAlerts.length} contentor${maritimeAlerts.length > 1 ? 'es' : ''} chegando (≤7 dias)</span>`);
             }
         } else {
-            bannerItems.push(`<span class="banner-item">🚢 ${maritimeContainers.length} contentor${maritimeContainers.length > 1 ? 'es' : ''} marítimo${maritimeContainers.length > 1 ? 's' : ''}</span>`);
+            bannerItems.push(`<span class="banner-item" data-page="containers">🚢 ${maritimeContainers.length} contentor${maritimeContainers.length > 1 ? 'es' : ''} marítimo${maritimeContainers.length > 1 ? 's' : ''}</span>`);
         }
         
         // Expedições aéreas
         if (airExpeditions.length > 0) {
-            bannerItems.push(`<span class="banner-item">✈️ ${airExpeditions.length} expediç${airExpeditions.length > 1 ? 'ões' : 'ão'} aérea${airExpeditions.length > 1 ? 's' : ''}</span>`);
+            bannerItems.push(`<span class="banner-item" data-page="containers">✈️ ${airExpeditions.length} expediç${airExpeditions.length > 1 ? 'ões' : 'ão'} aérea${airExpeditions.length > 1 ? 's' : ''}</span>`);
         }
     }
     
@@ -4238,12 +4238,12 @@ function updateDashboardBanner() {
             });
             
             if (urgentExpeditions.length > 0) {
-                bannerItems.push(`<span class="banner-item alert">🚚 ${urgentExpeditions.length} expediç${urgentExpeditions.length > 1 ? 'ões' : 'ão'} urgente${urgentExpeditions.length > 1 ? 's' : ''}</span>`);
+                bannerItems.push(`<span class="banner-item alert" data-page="expeditions">🚚 ${urgentExpeditions.length} expediç${urgentExpeditions.length > 1 ? 'ões' : 'ão'} urgente${urgentExpeditions.length > 1 ? 's' : ''}</span>`);
             } else {
-                bannerItems.push(`<span class="banner-item warning">🚚 ${upcomingExpeditions.length} expediç${upcomingExpeditions.length > 1 ? 'ões' : 'ão'} próxima${upcomingExpeditions.length > 1 ? 's' : ''}</span>`);
+                bannerItems.push(`<span class="banner-item warning" data-page="expeditions">🚚 ${upcomingExpeditions.length} expediç${upcomingExpeditions.length > 1 ? 'ões' : 'ão'} próxima${upcomingExpeditions.length > 1 ? 's' : ''}</span>`);
             }
         } else {
-            bannerItems.push(`<span class="banner-item">🚚 ${expeditions.length} expediç${expeditions.length > 1 ? 'ões' : 'ão'} • ${completedExpeditions.length} concluída${completedExpeditions.length > 1 ? 's' : ''}</span>`);
+            bannerItems.push(`<span class="banner-item" data-page="expeditions">🚚 ${expeditions.length} expediç${expeditions.length > 1 ? 'ões' : 'ão'} • ${completedExpeditions.length} concluída${completedExpeditions.length > 1 ? 's' : ''}</span>`);
         }
     }
     
@@ -4254,15 +4254,15 @@ function updateDashboardBanner() {
         const maintenanceVehicles = vehicles.filter(v => v.status === 'maintenance');
         
         if (maintenanceVehicles.length > 0) {
-            bannerItems.push(`<span class="banner-item warning">🔧 ${maintenanceVehicles.length} viatura${maintenanceVehicles.length > 1 ? 's' : ''} em manutenção</span>`);
+            bannerItems.push(`<span class="banner-item warning" data-page="fleet">🔧 ${maintenanceVehicles.length} viatura${maintenanceVehicles.length > 1 ? 's' : ''} em manutenção</span>`);
         }
         
         if (reservedVehicles.length > 0) {
-            bannerItems.push(`<span class="banner-item">🚗 ${availableVehicles.length} disponível${availableVehicles.length > 1 ? 'eis' : ''} • ${reservedVehicles.length} reservada${reservedVehicles.length > 1 ? 's' : ''}</span>`);
+            bannerItems.push(`<span class="banner-item" data-page="fleet">🚗 ${availableVehicles.length} disponível${availableVehicles.length > 1 ? 'eis' : ''} • ${reservedVehicles.length} reservada${reservedVehicles.length > 1 ? 's' : ''}</span>`);
         } else if (availableVehicles.length > 0) {
-            bannerItems.push(`<span class="banner-item success">🚗 ${availableVehicles.length}/${vehicles.length} viatura${availableVehicles.length > 1 ? 's' : ''} disponível${availableVehicles.length > 1 ? 'eis' : ''}</span>`);
+            bannerItems.push(`<span class="banner-item success" data-page="fleet">🚗 ${availableVehicles.length}/${vehicles.length} viatura${availableVehicles.length > 1 ? 's' : ''} disponível${availableVehicles.length > 1 ? 'eis' : ''}</span>`);
         } else {
-            bannerItems.push(`<span class="banner-item">🚗 ${vehicles.length} viatura${vehicles.length > 1 ? 's' : ''} na frota</span>`);
+            bannerItems.push(`<span class="banner-item" data-page="fleet">🚗 ${vehicles.length} viatura${vehicles.length > 1 ? 's' : ''} na frota</span>`);
         }
     }
     
@@ -4273,18 +4273,38 @@ function updateDashboardBanner() {
         const hoursAgo = Math.floor((new Date() - backupDate) / (1000 * 60 * 60));
         
         if (hoursAgo < 24) {
-            bannerItems.push(`<span class="banner-item success">💾 Backup recente (${hoursAgo}h atrás)</span>`);
+            bannerItems.push(`<span class="banner-item success" data-page="backup">💾 Backup recente (${hoursAgo}h atrás)</span>`);
         } else {
             const daysAgo = Math.floor(hoursAgo / 24);
-            bannerItems.push(`<span class="banner-item warning">💾 Último backup há ${daysAgo} dia${daysAgo > 1 ? 's' : ''}</span>`);
+            bannerItems.push(`<span class="banner-item warning" data-page="backup">💾 Último backup há ${daysAgo} dia${daysAgo > 1 ? 's' : ''}</span>`);
         }
     } else {
-        bannerItems.push(`<span class="banner-item alert">💾 Nenhum backup encontrado</span>`);
+        bannerItems.push(`<span class="banner-item alert" data-page="backup">💾 Nenhum backup encontrado</span>`);
     }
     
     // Duplicar items para criar efeito de scroll infinito
     const duplicatedItems = [...bannerItems, ...bannerItems];
     bannerElement.innerHTML = duplicatedItems.join('');
+    
+    // Adicionar event listeners para os cartões do banner
+    const bannerItemElements = bannerElement.querySelectorAll('.banner-item[data-page]');
+    bannerItemElements.forEach(item => {
+        item.style.cursor = 'pointer';
+        item.addEventListener('click', function() {
+            const pageId = this.getAttribute('data-page');
+            if (pageId) {
+                // Navegar para a página
+                showPage(pageId);
+                
+                // Atualizar item ativo no menu
+                navItems.forEach(nav => nav.classList.remove('active'));
+                const targetNavItem = document.querySelector(`.nav-item[data-page="${pageId}"]`);
+                if (targetNavItem) {
+                    targetNavItem.classList.add('active');
+                }
+            }
+        });
+    });
 }
 
 

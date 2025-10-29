@@ -251,6 +251,18 @@ body {
     backdrop-filter: blur(10px);
     border: 1px solid rgba(99, 102, 241, 0.2);
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.banner-item[data-page] {
+    cursor: pointer;
+}
+
+.banner-item[data-page]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(99, 102, 241, 0.5);
 }
 
 .banner-item.alert {
@@ -259,14 +271,32 @@ body {
     animation: pulse-alert 2s ease-in-out infinite;
 }
 
+.banner-item.alert[data-page]:hover {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(220, 38, 38, 0.3) 100%);
+    border-color: rgba(239, 68, 68, 0.6);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
 .banner-item.warning {
     background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.2) 100%);
     border-color: rgba(245, 158, 11, 0.4);
 }
 
+.banner-item.warning[data-page]:hover {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.3) 0%, rgba(217, 119, 6, 0.3) 100%);
+    border-color: rgba(245, 158, 11, 0.6);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
 .banner-item.success {
     background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(22, 163, 74, 0.2) 100%);
     border-color: rgba(34, 197, 94, 0.4);
+}
+
+.banner-item.success[data-page]:hover {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, rgba(22, 163, 74, 0.3) 100%);
+    border-color: rgba(34, 197, 94, 0.6);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
 }
 
 @keyframes pulse-alert {
