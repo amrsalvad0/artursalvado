@@ -2731,6 +2731,17 @@ textarea {
     opacity: 0.8;
 }
 
+/* Estilo para expedições concluídas */
+.expedition-completed {
+    background-color: #f8fff8 !important;
+    opacity: 0.7;
+}
+
+.expedition-completed:hover {
+    background-color: #f0fff0 !important;
+    opacity: 0.8;
+}
+
 /* ============================================================================
    TELEFONES INTERNOS
    ============================================================================ */

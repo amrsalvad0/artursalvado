@@ -2303,6 +2303,76 @@ function formatDate(dateString) {
     }
 }
 
+// Marcar expedição como concluída
+async function markExpeditionAsCompleted(expeditionId) {
+    try {
+        if (!confirm('Tem a certeza que deseja marcar esta expedição como concluída?')) {
+            return;
+        }
+
+        const response = await fetch(`/api/expeditions/${expeditionId}/completed`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification('Expedição marcada como concluída com sucesso!', 'success');
+            
+            // Recarregar dados de expedições
+            await loadExpeditions();
+            
+            // Recarregar alertas de expedições se estiver no dashboard
+            const currentPage = document.querySelector('.page.active');
+            if (currentPage && currentPage.id === 'dashboard') {
+                await checkExpeditionAlerts();
+            }
+            
+        } else {
+            showNotification(result.error || 'Erro ao marcar expedição como concluída', 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao marcar expedição como concluída:', error);
+        showNotification('Erro ao marcar expedição como concluída', 'error');
+    }
+}
+
+// Marcar expedição como não concluída
+async function markExpeditionAsUncompleted(expeditionId) {
+    try {
+        const response = await fetch(`/api/expeditions/${expeditionId}/uncompleted`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification('Expedição marcada como não concluída com sucesso!', 'success');
+            
+            // Recarregar dados de expedições
+            await loadExpeditions();
+            
+            // Recarregar alertas de expedições se estiver no dashboard
+            const currentPage = document.querySelector('.page.active');
+            if (currentPage && currentPage.id === 'dashboard') {
+                await checkExpeditionAlerts();
+            }
+            
+        } else {
+            showNotification(result.error || 'Erro ao marcar expedição como não concluída', 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao marcar expedição como não concluída:', error);
+        showNotification('Erro ao marcar expedição como não concluída', 'error');
+    }
+}
+
 // Event Listeners para Contentores
 if (importExcelBtn) {
     importExcelBtn.addEventListener('click', importExcelData);
@@ -2390,16 +2460,26 @@ function renderExpeditions() {
         
         row.className = priorityClass;
         
-        // Definir classe baseada no status
+        // Definir classe baseada no status ou no campo completed
         let statusClass = '';
         const status = expedition.status?.toLowerCase();
-        if (status?.includes('concluída') || status?.includes('entregue')) {
+        const isCompleted = expedition.completed === 1 || expedition.completed === true;
+        
+        if (isCompleted) {
+            statusClass = 'status-completed';
+            row.classList.add('expedition-completed');
+        } else if (status?.includes('concluída') || status?.includes('entregue')) {
             statusClass = 'status-completed';
         } else if (status?.includes('em curso') || status?.includes('expedida')) {
             statusClass = 'status-in-progress';
         } else if (status?.includes('pendente') || status?.includes('aguarda')) {
             statusClass = 'status-pending';
         }
+        
+        // Status de conclusão
+        const completionStatus = isCompleted ? 
+            '<span class="status-badge status-completed">✓ Concluída</span>' : 
+            '<span class="status-badge status-pending">⏳ Pendente</span>';
         
         row.innerHTML = `
             <td>${expedition.expedition_week || 'N/A'}</td>
@@ -2414,6 +2494,18 @@ function renderExpeditions() {
             <td>${expedition.volume_type || 'N/A'}</td>
             <td>${expedition.delivery_location || 'N/A'}</td>
             <td><span class="status-badge ${statusClass}">${expedition.status || 'N/A'}</span></td>
+            <td>${completionStatus}</td>
+            <td>
+                ${!isCompleted ? `
+                    <button class="btn btn-sm btn-success" onclick="markExpeditionAsCompleted('${expedition.id}')" title="Marcar como concluída">
+                        <i class="fas fa-check"></i>
+                    </button>
+                ` : `
+                    <button class="btn btn-sm btn-warning" onclick="markExpeditionAsUncompleted('${expedition.id}')" title="Marcar como não concluída">
+                        <i class="fas fa-undo"></i>
+                    </button>
+                `}
+            </td>
         `;
         
         tableBody.appendChild(row);
@@ -2510,6 +2602,11 @@ async function checkExpeditionAlerts() {
                     <p><strong>Local Atual:</strong> ${expedition.current_location || 'N/A'}</p>
                     <p><strong>Entrega:</strong> ${expedition.delivery_location || 'N/A'}</p>
                     <p class="alert-date">Expedição: ${formatDate(expedition.expedition_date)} (${daysUntil} dias)</p>
+                    <div class="alert-actions" style="margin-top: 10px;">
+                        <button class="btn btn-sm btn-success" onclick="event.stopPropagation(); markExpeditionAsCompleted('${expedition.id}')" title="Marcar como concluída">
+                            <i class="fas fa-check"></i> Concluída
+                        </button>
+                    </div>
                 `;
                 
                 alertsList.appendChild(alertDiv);

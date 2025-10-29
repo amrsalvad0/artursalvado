@@ -192,9 +192,25 @@ function initializeDatabase() {
     observations2 TEXT,
     transport_manager TEXT,
     status TEXT,
+    completed BOOLEAN DEFAULT 0,
+    completed_date DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+
+  // Adicionar coluna completed se não existir (para bases de dados existentes)
+  db.run(`ALTER TABLE expeditions ADD COLUMN completed BOOLEAN DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column name')) {
+      console.error('Erro ao adicionar coluna completed:', err.message);
+    }
+  });
+
+  // Adicionar coluna completed_date se não existir
+  db.run(`ALTER TABLE expeditions ADD COLUMN completed_date DATETIME`, (err) => {
+    if (err && !err.message.includes('duplicate column name')) {
+      console.error('Erro ao adicionar coluna completed_date:', err.message);
+    }
+  });
 
   // Remover tabela de contactos (feature descontinuada)
   db.run('DROP TABLE IF EXISTS contacts');
@@ -917,7 +933,7 @@ app.get('/api/expeditions/alerts', (req, res) => {
   const next5WorkDaysStr = currentDate.toISOString().split('T')[0];
   
   db.all(
-    'SELECT * FROM expeditions WHERE expedition_date BETWEEN ? AND ? ORDER BY expedition_date, priority',
+    'SELECT * FROM expeditions WHERE expedition_date BETWEEN ? AND ? AND (completed IS NULL OR completed = 0) ORDER BY expedition_date, priority',
     [todayStr, next5WorkDaysStr],
     (err, rows) => {
       if (err) {
@@ -1014,6 +1030,48 @@ app.post('/api/expeditions/import-excel', (req, res) => {
     console.error('Erro ao importar Excel:', error);
     res.status(500).json({ error: 'Erro ao processar ficheiro Excel' });
   }
+});
+
+// Marcar expedição como concluída
+app.put('/api/expeditions/:id/completed', (req, res) => {
+  const { id } = req.params;
+  const completedDate = new Date().toISOString();
+  
+  db.run(
+    'UPDATE expeditions SET completed = 1, completed_date = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+    [completedDate, id],
+    function(err) {
+      if (err) {
+        res.status(500).json({ error: err.message });
+      } else if (this.changes === 0) {
+        res.status(404).json({ error: 'Expedição não encontrada' });
+      } else {
+        res.json({ 
+          message: 'Expedição marcada como concluída',
+          completedDate: completedDate
+        });
+      }
+    }
+  );
+});
+
+// Marcar expedição como não concluída
+app.put('/api/expeditions/:id/uncompleted', (req, res) => {
+  const { id } = req.params;
+  
+  db.run(
+    'UPDATE expeditions SET completed = 0, completed_date = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+    [id],
+    function(err) {
+      if (err) {
+        res.status(500).json({ error: err.message });
+      } else if (this.changes === 0) {
+        res.status(404).json({ error: 'Expedição não encontrada' });
+      } else {
+        res.json({ message: 'Expedição marcada como não concluída' });
+      }
+    }
+  );
 });
 
 // CONTACTOS removidos
