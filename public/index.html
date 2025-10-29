@@ -225,141 +225,185 @@
                     </div>
                 </div>
 
-                <div class="fleet-tabs">
-                    <button class="tab-btn active" data-tab="vehicles">
-                        <i class="fas fa-car"></i> Viaturas
-                    </button>
-                    <button class="tab-btn" data-tab="reservations">
-                        <i class="fas fa-calendar-check"></i> Reservas
-                    </button>
-                    <button class="tab-btn" data-tab="maintenance">
-                        <i class="fas fa-tools"></i> Manutenções
-                    </button>
-                    <button class="tab-btn" data-tab="reports">
-                        <i class="fas fa-chart-bar"></i> Relatórios
-                    </button>
-                </div>
-
-                <!-- Aba Viaturas -->
-                <div class="tab-content active" id="vehicles-tab">
-                    <div class="vehicles-grid" id="vehiclesGrid">
-                        <!-- Viaturas serão carregadas dinamicamente -->
-                    </div>
-                </div>
-
-                <!-- Aba Reservas -->
-                <div class="tab-content" id="reservations-tab">
-                    <div class="reservations-table-wrapper">
-                        <table class="data-table" id="reservationsTable">
-                            <thead>
-                                <tr>
-                                    <th>Viatura</th>
-                                    <th>Utilizador</th>
-                                    <th>Data Início</th>
-                                    <th>Data Fim</th>
-                                    <th>Propósito</th>
-                                    <th>Status</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="reservationsTableBody">
-                                <!-- Reservas serão carregadas dinamicamente -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Aba Manutenções -->
-                <div class="tab-content" id="maintenance-tab">
-                    <div class="maintenance-table-wrapper">
-                        <table class="data-table" id="maintenanceTable">
-                            <thead>
-                                <tr>
-                                    <th>Viatura</th>
-                                    <th>Tipo</th>
-                                    <th>Data Agendada</th>
-                                    <th>Prioridade</th>
-                                    <th>Status</th>
-                                    <th>Custo</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="maintenanceTableBody">
-                                <!-- Manutenções serão carregadas dinamicamente -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Aba Relatórios -->
-                <div class="tab-content" id="reports-tab">
-                    <div class="reports-container">
-                        <div class="report-filters">
-                            <h3>Gerar Relatório por Veículo</h3>
-                            <div class="filter-group">
-                                <div class="form-group">
-                                    <label for="reportVehicleSelect">Selecionar Veículo:</label>
-                                    <select id="reportVehicleSelect" class="form-control">
-                                        <option value="">Selecione um veículo...</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="reportDateFrom">Data Início:</label>
-                                    <input type="date" id="reportDateFrom" class="form-control">
-                                </div>
-                                <div class="form-group">
-                                    <label for="reportDateTo">Data Fim:</label>
-                                    <input type="date" id="reportDateTo" class="form-control">
-                                </div>
+                <div class="fleet-container">
+                    <!-- Estatísticas da Frota -->
+                    <div class="fleet-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-car"></i>
                             </div>
-                            <div class="report-actions">
-                                <button class="btn btn-primary" id="generateReportBtn">
-                                    <i class="fas fa-chart-line"></i> Ver Relatório
-                                </button>
-                                <button class="btn btn-danger" id="exportPdfBtn" disabled>
-                                    <i class="fas fa-file-pdf"></i> Exportar PDF
-                                </button>
+                            <div class="stat-content">
+                                <h3>Total Viaturas</h3>
+                                <span class="stat-number" id="totalVehicles">0</span>
                             </div>
                         </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>Disponíveis</h3>
+                                <span class="stat-number" id="availableVehicles">0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>Reservadas</h3>
+                                <span class="stat-number" id="reservedVehicles">0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card urgent">
+                            <div class="stat-icon">
+                                <i class="fas fa-wrench"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>Em Manutenção</h3>
+                                <span class="stat-number" id="maintenanceVehicles">0</span>
+                            </div>
+                        </div>
+                    </div>
 
-                        <div class="report-content" id="reportContent" style="display: none;">
-                            <div class="report-header">
-                                <h3 id="reportTitle">Relatório de Veículo</h3>
-                                <div class="report-summary" id="reportSummary">
-                                    <!-- Resumo será carregado dinamicamente -->
+                    <div class="fleet-tabs">
+                        <button class="tab-btn active" data-tab="vehicles">
+                            <i class="fas fa-car"></i> Viaturas
+                        </button>
+                        <button class="tab-btn" data-tab="reservations">
+                            <i class="fas fa-calendar-check"></i> Reservas
+                        </button>
+                        <button class="tab-btn" data-tab="maintenance">
+                            <i class="fas fa-tools"></i> Manutenções
+                        </button>
+                        <button class="tab-btn" data-tab="reports">
+                            <i class="fas fa-chart-bar"></i> Relatórios
+                        </button>
+                    </div>
+
+                    <!-- Aba Viaturas -->
+                    <div class="tab-content active" id="vehicles-tab">
+                        <div class="vehicles-grid" id="vehiclesGrid">
+                            <!-- Viaturas serão carregadas dinamicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Aba Reservas -->
+                    <div class="tab-content" id="reservations-tab">
+                        <div class="reservations-table-wrapper">
+                            <table class="data-table" id="reservationsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Viatura</th>
+                                        <th>Utilizador</th>
+                                        <th>Data Início</th>
+                                        <th>Data Fim</th>
+                                        <th>Propósito</th>
+                                        <th>Status</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reservationsTableBody">
+                                    <!-- Reservas serão carregadas dinamicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Aba Manutenções -->
+                    <div class="tab-content" id="maintenance-tab">
+                        <div class="maintenance-table-wrapper">
+                            <table class="data-table" id="maintenanceTable">
+                                <thead>
+                                    <tr>
+                                        <th>Viatura</th>
+                                        <th>Tipo</th>
+                                        <th>Data Agendada</th>
+                                        <th>Prioridade</th>
+                                        <th>Status</th>
+                                        <th>Custo</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="maintenanceTableBody">
+                                    <!-- Manutenções serão carregadas dinamicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Aba Relatórios -->
+                    <div class="tab-content" id="reports-tab">
+                        <div class="reports-container">
+                            <div class="report-filters">
+                                <h3>Gerar Relatório por Veículo</h3>
+                                <div class="filter-group">
+                                    <div class="form-group">
+                                        <label for="reportVehicleSelect">Selecionar Veículo:</label>
+                                        <select id="reportVehicleSelect" class="form-control">
+                                            <option value="">Selecione um veículo...</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="reportDateFrom">Data Início:</label>
+                                        <input type="date" id="reportDateFrom" class="form-control">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="reportDateTo">Data Fim:</label>
+                                        <input type="date" id="reportDateTo" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="report-actions">
+                                    <button class="btn btn-primary" id="generateReportBtn">
+                                        <i class="fas fa-chart-line"></i> Ver Relatório
+                                    </button>
+                                    <button class="btn btn-danger" id="exportPdfBtn" disabled>
+                                        <i class="fas fa-file-pdf"></i> Exportar PDF
+                                    </button>
                                 </div>
                             </div>
 
-                            <div class="report-sections">
-                                <div class="report-section">
-                                    <h4><i class="fas fa-calendar-check"></i> Reservas</h4>
-                                    <div class="report-table-wrapper">
-                                        <table class="data-table" id="reportReservationsTable">
-                                            <thead>
-                                                <tr>
-                                                    <th>Utilizador</th>
-                                                    <th>Data Início</th>
-                                                    <th>Data Fim</th>
-                                                    <th>Finalidade</th>
-                                                    <th>Estado</th>
-                                                    <th>Km Inicial</th>
-                                                    <th>Km Final</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="reportReservationsBody">
-                                                <!-- Reservas serão carregadas dinamicamente -->
-                                            </tbody>
-                                        </table>
+                            <div class="report-content" id="reportContent" style="display: none;">
+                                <div class="report-header">
+                                    <h3 id="reportTitle">Relatório de Veículo</h3>
+                                    <div class="report-summary" id="reportSummary">
+                                        <!-- Resumo será carregado dinamicamente -->
                                     </div>
                                 </div>
 
-                                <div class="report-section">
-                                    <h4><i class="fas fa-tools"></i> Manutenções</h4>
-                                    <div class="report-table-wrapper">
-                                        <table class="data-table" id="reportMaintenanceTable">
-                                            <thead>
-                                                <tr>
-                                                    <th>Tipo</th>
+                                <div class="report-sections">
+                                    <div class="report-section">
+                                        <h4><i class="fas fa-calendar-check"></i> Reservas</h4>
+                                        <div class="report-table-wrapper">
+                                            <table class="data-table" id="reportReservationsTable">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Utilizador</th>
+                                                        <th>Data Início</th>
+                                                        <th>Data Fim</th>
+                                                        <th>Finalidade</th>
+                                                        <th>Estado</th>
+                                                        <th>Km Inicial</th>
+                                                        <th>Km Final</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="reportReservationsBody">
+                                                    <!-- Reservas serão carregadas dinamicamente -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <div class="report-section">
+                                        <h4><i class="fas fa-tools"></i> Manutenções</h4>
+                                        <div class="report-table-wrapper">
+                                            <table class="data-table" id="reportMaintenanceTable">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Tipo</th>
                                                     <th>Descrição</th>
                                                     <th>Data Agendada</th>
                                                     <th>Data Conclusão</th>

@@ -2589,11 +2589,32 @@ async function loadFleetData() {
 
         updateFleetDisplay();
         updateFleetStats();
+        updateFleetPageStats(); // Nova função para estatísticas na página da frota
         loadMaintenanceAlerts();
     } catch (error) {
         console.error('Erro ao carregar dados da frota:', error);
         showNotification('Erro ao carregar dados da frota', 'error');
     }
+}
+
+// Atualizar estatísticas na página da frota
+function updateFleetPageStats() {
+    if (!vehicles || vehicles.length === 0) return;
+    
+    const totalVehicles = vehicles.length;
+    const availableVehicles = vehicles.filter(v => v.status === 'available').length;
+    const reservedVehicles = vehicles.filter(v => v.status === 'reserved').length;
+    const maintenanceVehicles = vehicles.filter(v => v.status === 'maintenance').length;
+    
+    const totalEl = document.getElementById('totalVehicles');
+    const availableEl = document.getElementById('availableVehicles');
+    const reservedEl = document.getElementById('reservedVehicles');
+    const maintenanceEl = document.getElementById('maintenanceVehicles');
+    
+    if (totalEl) totalEl.textContent = totalVehicles;
+    if (availableEl) availableEl.textContent = availableVehicles;
+    if (reservedEl) reservedEl.textContent = reservedVehicles;
+    if (maintenanceEl) maintenanceEl.textContent = maintenanceVehicles;
 }
 
 // Atualizar estatísticas da frota no dashboard
