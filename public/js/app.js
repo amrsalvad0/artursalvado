@@ -599,12 +599,16 @@ function createMeetingElement(meeting, isCompact = false) {
 
 function renderTasks() {
     const tasksList = document.getElementById('tasksList');
+    const recentTasks = document.getElementById('recentTasks');
     if (!tasksList) return;
     
     tasksList.innerHTML = '';
     
     if (tasks.length === 0) {
         tasksList.innerHTML = '<div style="text-align: center; padding: 40px; color: #7f8c8d;">Nenhuma tarefa criada</div>';
+        if (recentTasks) {
+            recentTasks.innerHTML = '<div style="text-align: center; padding: 40px; color: #7f8c8d;">Nenhuma tarefa pendente</div>';
+        }
         return;
     }
     
@@ -612,6 +616,63 @@ function renderTasks() {
         const taskElement = createTaskElement(task);
         tasksList.appendChild(taskElement);
     });
+    
+    // Renderizar tarefas recentes no dashboard
+    if (recentTasks) {
+        recentTasks.innerHTML = '';
+        const upcomingTasks = tasks
+            .filter(t => t.status !== 'completed')
+            .sort((a, b) => {
+                if (!a.due_date) return 1;
+                if (!b.due_date) return -1;
+                return new Date(a.due_date) - new Date(b.due_date);
+            })
+            .slice(0, 5);
+            
+        if (upcomingTasks.length === 0) {
+            recentTasks.innerHTML = '<div style="text-align: center; padding: 40px; color: #7f8c8d;">Nenhuma tarefa pendente</div>';
+        } else {
+            upcomingTasks.forEach(task => {
+                const taskElement = createTaskElementCompact(task);
+                recentTasks.appendChild(taskElement);
+            });
+        }
+    }
+}
+
+function createTaskElementCompact(task) {
+    const div = document.createElement('div');
+    div.className = `task-item priority-${task.priority}`;
+    div.onclick = () => openTaskDetails(task.id);
+    
+    let dueDateText = '';
+    let dueDateClass = '';
+    if (task.due_date) {
+        const dueDate = new Date(task.due_date);
+        const now = new Date();
+        const isOverdue = dueDate < now;
+        dueDateText = `<i class="fas fa-clock"></i> ${dueDate.toLocaleDateString('pt-PT')} às ${dueDate.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}`;
+        dueDateClass = isOverdue ? 'style="color: #e74c3c; font-weight: 600;"' : '';
+    }
+    
+    const priorityIcons = {
+        high: '<i class="fas fa-exclamation-circle" style="color: #e74c3c;"></i>',
+        medium: '<i class="fas fa-exclamation-triangle" style="color: #f39c12;"></i>',
+        low: '<i class="fas fa-info-circle" style="color: #3498db;"></i>'
+    };
+    
+    div.innerHTML = `
+        <div class="task-header">
+            <div class="task-title">
+                ${priorityIcons[task.priority] || ''} ${task.title}
+            </div>
+            <span class="task-status status-${task.status}">${getStatusText(task.status)}</span>
+        </div>
+        ${task.description ? `<div class="task-description">${task.description}</div>` : ''}
+        ${dueDateText ? `<div class="task-due" ${dueDateClass}>${dueDateText}</div>` : ''}
+    `;
+    
+    return div;
 }
 
 function createTaskElement(task) {

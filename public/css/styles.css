@@ -476,12 +476,20 @@ body {
 }
 
 /* Seção Recente */
+.upcoming-cards-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    margin-top: 30px;
+}
+
 .recent-section {
     background: var(--card-bg);
     padding: 30px;
     border-radius: 16px;
     box-shadow: var(--card-shadow);
     border: 1px solid rgba(99, 102, 241, 0.1);
+    min-height: 400px;
 }
 
 .recent-section h2 {
@@ -490,7 +498,21 @@ body {
     font-weight: 600;
 }
 
-/* Reuniões */
+.recent-meetings,
+.recent-tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Responsividade para os cartões lado a lado */
+@media (max-width: 1024px) {
+    .upcoming-cards-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Reuniões e Tarefas no Dashboard */
 .meetings-container, .tasks-container {
     background: var(--card-bg);
     border-radius: 16px;
@@ -529,10 +551,6 @@ body {
     margin-bottom: 5px;
 }
 
-.task-title {
-    color: #000000;
-}
-
 .meeting-time, .task-due {
     color: var(--text-muted);
     font-size: 0.9rem;
@@ -543,6 +561,82 @@ body {
     border-radius: 20px;
     font-size: 0.8rem;
     font-weight: 500;
+}
+
+/* Estilos específicos para tarefas no recent-tasks */
+.recent-tasks .task-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 15px;
+    background: var(--background-secondary);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    transition: all 0.3s ease;
+}
+
+.recent-tasks .task-item:hover {
+    background: rgba(99, 102, 241, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.recent-tasks .task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.recent-tasks .task-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.recent-tasks .task-due {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.recent-tasks .task-description {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.recent-meetings .meeting-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 15px;
+    background: var(--background-secondary);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    transition: all 0.3s ease;
+}
+
+.recent-meetings .meeting-item:hover {
+    background: rgba(99, 102, 241, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.recent-meetings .meeting-title {
+    font-size: 1rem;
+}
+
+.recent-meetings .meeting-time {
+    font-size: 0.85rem;
 }
 
 .status-scheduled {
