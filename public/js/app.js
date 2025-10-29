@@ -126,31 +126,7 @@ function setupEventListeners() {
     createBackupBtn.addEventListener('click', createBackup);
     cleanOldBackupsBtn.addEventListener('click', cleanOldBackups);
 
-    // Card de alertas clicável
-    const containerAlertsCard = document.getElementById('containerAlertsCard');
-    if (containerAlertsCard) {
-        containerAlertsCard.addEventListener('click', toggleAlertsSection);
-    }
-
-    // Card de reuniões hoje clicável
-    const meetingsTodayCard = document.getElementById('meetingsTodayCard');
-    if (meetingsTodayCard) {
-        meetingsTodayCard.addEventListener('click', toggleMeetingsSection);
-    }
-
-    // Card de tarefas pendentes clicável
-    const pendingTasksCard = document.getElementById('pendingTasksCard');
-    if (pendingTasksCard) {
-        pendingTasksCard.addEventListener('click', toggleTasksSection);
-    }
-
-    // Card de viaturas reservadas clicável
-    const reservedVehiclesCard = document.getElementById('reservedVehiclesCard');
-    if (reservedVehiclesCard) {
-        reservedVehiclesCard.addEventListener('click', toggleReservedVehiclesSection);
-    }
-
-    // Botão de colapso dos alertas
+    // Botão de colapso dos alertas de contentores
     const collapseAlertsBtn = document.getElementById('collapseAlertsBtn');
     if (collapseAlertsBtn) {
         collapseAlertsBtn.addEventListener('click', (e) => {
@@ -727,30 +703,7 @@ function updateDashboard() {
     const pendingTasks = tasks.filter(t => t.status === 'pending').length;
     const completedTasks = tasks.filter(t => t.status === 'completed').length;
     
-    document.getElementById('meetingsToday').textContent = meetingsToday;
-    document.getElementById('pendingTasks').textContent = pendingTasks;
-    document.getElementById('completedTasks').textContent = completedTasks;
-    
-    // Atualizar estilos dos cartões clicáveis
-    const meetingsCard = document.getElementById('meetingsTodayCard');
-    const tasksCard = document.getElementById('pendingTasksCard');
-    
-    if (meetingsCard) {
-        meetingsCard.style.cursor = meetingsToday > 0 ? 'pointer' : 'default';
-    }
-    
-    if (tasksCard) {
-        tasksCard.style.cursor = pendingTasks > 0 ? 'pointer' : 'default';
-    }
-    
-    // Verificar reunião ativa
-    const activeMeeting = meetings.find(m => m.status === 'active');
-    const activeMeetingElement = document.getElementById('activeMeeting');
-    if (activeMeetingElement) {
-        activeMeetingElement.textContent = activeMeeting ? activeMeeting.title : 'Nenhuma';
-    }
-    
-    // Verificar alertas de contentores se a função existir
+    // Verificar alertas de contentores PRIMEIRO (antes de atualizar UI)
     if (typeof checkContainerAlerts === 'function') {
         checkContainerAlerts();
     }
@@ -775,7 +728,13 @@ function updateDashboard() {
         loadReservedVehiclesAlerts();
     }
     
-    // Atualizar banner do dashboard
+    // Carregar reuniões de hoje
+    loadTodayMeetings();
+    
+    // Carregar tarefas pendentes
+    loadPendingTasks();
+    
+    // Atualizar banner do dashboard (DEPOIS de verificar alertas)
     updateDashboardBanner();
 }
 
@@ -1774,58 +1733,26 @@ function updateContainerStats() {
 async function checkContainerAlerts() {
     try {
         const response = await fetch('/api/containers/alerts');
-    const allAlerts = await response.json();
-    // Filtrar apenas contentores marítimos para alertas
-    const alerts = allAlerts.filter(c => isMaritime(c));
+        const allAlerts = await response.json();
+        // Filtrar apenas contentores marítimos para alertas
+        const alerts = allAlerts.filter(c => isMaritime(c));
         
-        const alertCount = document.getElementById('containerAlerts');
+        console.log('Alertas de contentores marítimos encontrados:', alerts.length);
+        
         const alertsSection = document.getElementById('containerAlertsSection');
         const alertsList = document.getElementById('containerAlertsList');
-        const alertCard = document.getElementById('containerAlertsCard');
-        const expandIcon = document.getElementById('alertsExpandIcon');
         
-        if (!alertCount) return;
-        
-        alertCount.textContent = alerts.length;
-        
-        // Atualizar estado visual do card baseado no número de alertas
-        if (alertCard) {
-            if (alerts.length === 0) {
-                alertCard.style.cursor = 'default';
-                alertCard.title = 'Nenhum alerta de contentor marítimo';
-                if (expandIcon) expandIcon.style.opacity = '0.3';
-            } else {
-                alertCard.style.cursor = 'pointer';
-                alertCard.title = `Clique para ver ${alerts.length} alerta${alerts.length > 1 ? 's' : ''} de contentor${alerts.length > 1 ? 'es' : ''} marítimo${alerts.length > 1 ? 's' : ''}`;
-                if (expandIcon) expandIcon.style.opacity = '1';
-            }
+        if (!alertsSection || !alertsList) {
+            console.error('Elementos de alertas não encontrados no DOM');
+            return;
         }
         
         if (alerts.length > 0) {
-            // Determinar a prioridade mais alta dos alertas
-            let highestPriority = 'normal';
-            alerts.forEach(container => {
-                const arrivalDate = new Date(container.arrival_date);
-                const today = new Date();
-                const daysUntil = Math.ceil((arrivalDate - today) / (1000 * 60 * 60 * 24));
-                
-                if (daysUntil <= 2) {
-                    highestPriority = 'urgent';
-                } else if (daysUntil <= 5 && highestPriority !== 'urgent') {
-                    highestPriority = 'warning';
-                }
-            });
+            console.log('Mostrando', alerts.length, 'alertas de contentores marítimos no dashboard');
             
-            // Atualizar cor do card baseado na prioridade mais alta
-            if (alertCard) {
-                alertCard.classList.remove('alert-normal', 'alert-warning', 'alert-urgent');
-                alertCard.classList.add(`alert-${highestPriority}`);
-            }
-            
-            // Mostrar seção de alertas apenas se houver alertas e não estiver em modo colapsado
-            if (!alertsSection.classList.contains('manually-hidden')) {
-                alertsSection.style.display = 'block';
-            }
+            // Mostrar seção de alertas (sempre visível quando há alertas)
+            alertsSection.style.display = 'block';
+            alertsSection.classList.remove('manually-hidden');
             alertsList.innerHTML = '';
             
             // Agrupar contentores pela referência
@@ -1923,58 +1850,12 @@ async function checkContainerAlerts() {
                 }
             }, 100);
         } else {
+            console.log('Nenhum alerta de contentor marítimo - ocultando seção');
             alertsSection.style.display = 'none';
             alertsSection.classList.remove('manually-hidden');
-            
-            // Resetar cor do card quando não há alertas
-            if (alertCard) {
-                alertCard.classList.remove('alert-normal', 'alert-warning', 'alert-urgent');
-            }
         }
     } catch (error) {
-        console.error('Erro ao verificar alertas:', error);
-    }
-}
-
-// Função para alternar a visibilidade da seção de alertas
-function toggleAlertsSection() {
-    const alertsSection = document.getElementById('containerAlertsSection');
-    const expandIcon = document.getElementById('alertsExpandIcon');
-    const alertCount = document.getElementById('containerAlerts');
-    const alertCard = document.getElementById('containerAlertsCard');
-    
-    if (!alertsSection || !expandIcon || !alertCount || !alertCard) return;
-    
-    // Só permitir toggle se houver alertas
-    const count = parseInt(alertCount.textContent);
-    if (count === 0) {
-        // Remover estilo clicável quando não há alertas
-        alertCard.style.cursor = 'default';
-        return;
-    }
-    
-    // Garantir que o card é clicável quando há alertas
-    alertCard.style.cursor = 'pointer';
-    
-    if (alertsSection.style.display === 'none' || alertsSection.classList.contains('manually-hidden')) {
-        // Mostrar seção de alertas
-        alertsSection.style.display = 'block';
-        alertsSection.classList.remove('manually-hidden');
-        expandIcon.classList.add('rotated');
-        
-        // Garantir que o conteúdo não esteja colapsado
-        const alertsList = document.getElementById('containerAlertsList');
-        if (alertsList && alertsList.classList.contains('collapsed')) {
-            alertsList.classList.remove('collapsed');
-            setTimeout(() => {
-                alertsList.style.maxHeight = alertsList.scrollHeight + 'px';
-            }, 100);
-        }
-    } else {
-        // Esconder seção de alertas
-        alertsSection.style.display = 'none';
-        alertsSection.classList.add('manually-hidden');
-        expandIcon.classList.remove('rotated');
+        console.error('Erro ao verificar alertas de contentores:', error);
     }
 }
 
@@ -4174,20 +4055,24 @@ function updateDashboardBanner() {
     
     // Tarefas pendentes
     const pendingTasks = tasks.filter(t => t.status === 'pending');
+    const completedTasks = tasks.filter(t => t.status === 'completed');
     if (pendingTasks.length > 0) {
         const overdueTasks = pendingTasks.filter(t => t.due_date && new Date(t.due_date) < new Date());
         if (overdueTasks.length > 0) {
             bannerItems.push(`<span class="banner-item alert">⚠️ ${overdueTasks.length} tarefa${overdueTasks.length > 1 ? 's' : ''} atrasada${overdueTasks.length > 1 ? 's' : ''}</span>`);
         } else {
-            bannerItems.push(`<span class="banner-item">📋 ${pendingTasks.length} tarefa${pendingTasks.length > 1 ? 's' : ''} pendente${pendingTasks.length > 1 ? 's' : ''}</span>`);
+            bannerItems.push(`<span class="banner-item">📋 ${pendingTasks.length} tarefa${pendingTasks.length > 1 ? 's' : ''} pendente${pendingTasks.length > 1 ? 's' : ''} • ${completedTasks.length} concluída${completedTasks.length > 1 ? 's' : ''}</span>`);
         }
     } else {
-        bannerItems.push(`<span class="banner-item success">✅ Todas as tarefas concluídas</span>`);
+        bannerItems.push(`<span class="banner-item success">✅ Todas as tarefas concluídas (${completedTasks.length})</span>`);
     }
     
-    // Alertas de contentores marítimos
+    // Contentores Marítimos e Expedições Aéreas
     if (containers && containers.length > 0) {
         const maritimeContainers = containers.filter(c => isMaritime(c));
+        const airExpeditions = containers.filter(c => !isMaritime(c));
+        
+        // Contentores marítimos com alertas
         const maritimeAlerts = maritimeContainers.filter(c => {
             if (!c.arrival_date) return false;
             const arrivalDate = new Date(c.arrival_date);
@@ -4210,9 +4095,14 @@ function updateDashboardBanner() {
         } else {
             bannerItems.push(`<span class="banner-item">🚢 ${maritimeContainers.length} contentor${maritimeContainers.length > 1 ? 'es' : ''} marítimo${maritimeContainers.length > 1 ? 's' : ''}</span>`);
         }
+        
+        // Expedições aéreas
+        if (airExpeditions.length > 0) {
+            bannerItems.push(`<span class="banner-item">✈️ ${airExpeditions.length} expediç${airExpeditions.length > 1 ? 'ões' : 'ão'} aérea${airExpeditions.length > 1 ? 's' : ''}</span>`);
+        }
     }
     
-    // Expedições
+    // Expedições (camião)
     if (expeditions && expeditions.length > 0) {
         const upcomingExpeditions = expeditions.filter(e => {
             if (!e.date || e.status === 'completed') return false;
@@ -4221,6 +4111,8 @@ function updateDashboardBanner() {
             return daysUntil >= 0 && daysUntil <= 5;
         });
         
+        const completedExpeditions = expeditions.filter(e => e.status === 'completed');
+        
         if (upcomingExpeditions.length > 0) {
             const urgentExpeditions = upcomingExpeditions.filter(e => {
                 const priority = (e.priority || '').toLowerCase();
@@ -4228,27 +4120,48 @@ function updateDashboardBanner() {
             });
             
             if (urgentExpeditions.length > 0) {
-                bannerItems.push(`<span class="banner-item alert">🚚 ${urgentExpeditions.length} expedição${urgentExpeditions.length > 1 ? 'ões' : ''} urgente${urgentExpeditions.length > 1 ? 's' : ''}</span>`);
+                bannerItems.push(`<span class="banner-item alert">🚚 ${urgentExpeditions.length} expediç${urgentExpeditions.length > 1 ? 'ões' : 'ão'} urgente${urgentExpeditions.length > 1 ? 's' : ''}</span>`);
             } else {
-                bannerItems.push(`<span class="banner-item warning">🚚 ${upcomingExpeditions.length} expedição${upcomingExpeditions.length > 1 ? 'ões' : ''} próxima${upcomingExpeditions.length > 1 ? 's' : ''}</span>`);
+                bannerItems.push(`<span class="banner-item warning">🚚 ${upcomingExpeditions.length} expediç${upcomingExpeditions.length > 1 ? 'ões' : 'ão'} próxima${upcomingExpeditions.length > 1 ? 's' : ''}</span>`);
             }
         } else {
-            bannerItems.push(`<span class="banner-item">🚚 ${expeditions.length} expedição${expeditions.length > 1 ? 'ões' : ''} registrada${expeditions.length > 1 ? 's' : ''}</span>`);
+            bannerItems.push(`<span class="banner-item">🚚 ${expeditions.length} expediç${expeditions.length > 1 ? 'ões' : 'ão'} • ${completedExpeditions.length} concluída${completedExpeditions.length > 1 ? 's' : ''}</span>`);
         }
     }
     
-    // Viaturas
+    // Viaturas (Frota)
     if (vehicles && vehicles.length > 0) {
         const availableVehicles = vehicles.filter(v => v.status === 'available');
+        const reservedVehicles = vehicles.filter(v => v.status === 'reserved');
         const maintenanceVehicles = vehicles.filter(v => v.status === 'maintenance');
         
         if (maintenanceVehicles.length > 0) {
             bannerItems.push(`<span class="banner-item warning">🔧 ${maintenanceVehicles.length} viatura${maintenanceVehicles.length > 1 ? 's' : ''} em manutenção</span>`);
+        }
+        
+        if (reservedVehicles.length > 0) {
+            bannerItems.push(`<span class="banner-item">🚗 ${availableVehicles.length} disponível${availableVehicles.length > 1 ? 'eis' : ''} • ${reservedVehicles.length} reservada${reservedVehicles.length > 1 ? 's' : ''}</span>`);
         } else if (availableVehicles.length > 0) {
-            bannerItems.push(`<span class="banner-item success">🚗 ${availableVehicles.length} viatura${availableVehicles.length > 1 ? 's' : ''} disponível${availableVehicles.length > 1 ? 'eis' : ''}</span>`);
+            bannerItems.push(`<span class="banner-item success">🚗 ${availableVehicles.length}/${vehicles.length} viatura${availableVehicles.length > 1 ? 's' : ''} disponível${availableVehicles.length > 1 ? 'eis' : ''}</span>`);
         } else {
             bannerItems.push(`<span class="banner-item">🚗 ${vehicles.length} viatura${vehicles.length > 1 ? 's' : ''} na frota</span>`);
         }
+    }
+    
+    // Backup (última verificação)
+    if (backups && backups.length > 0) {
+        const lastBackup = backups[0]; // Assumindo que os backups estão ordenados por data
+        const backupDate = new Date(lastBackup.created_at);
+        const hoursAgo = Math.floor((new Date() - backupDate) / (1000 * 60 * 60));
+        
+        if (hoursAgo < 24) {
+            bannerItems.push(`<span class="banner-item success">💾 Backup recente (${hoursAgo}h atrás)</span>`);
+        } else {
+            const daysAgo = Math.floor(hoursAgo / 24);
+            bannerItems.push(`<span class="banner-item warning">💾 Último backup há ${daysAgo} dia${daysAgo > 1 ? 's' : ''}</span>`);
+        }
+    } else {
+        bannerItems.push(`<span class="banner-item alert">💾 Nenhum backup encontrado</span>`);
     }
     
     // Duplicar items para criar efeito de scroll infinito
