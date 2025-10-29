@@ -529,6 +529,10 @@ body {
     margin-bottom: 5px;
 }
 
+.task-title {
+    color: #000000;
+}
+
 .meeting-time, .task-due {
     color: var(--text-muted);
     font-size: 0.9rem;
